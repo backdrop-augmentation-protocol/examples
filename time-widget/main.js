@@ -13,7 +13,10 @@ if (embedded) window.addEventListener('message', (event) => {
   if (event.source !== window.parent || event.origin !== window.location.origin) return;
   const message = event.data;
   if (message?.kind !== 'request' || !message.id) return;
-  event.source.postMessage(createResponse(message, { acknowledged: true, method: message.method }, { sessionId: 'examples-session' }), event.origin);
+  const result = message.method === 'hello'
+    ? { protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, sessionId: 'examples-session', capabilities: manifest.capabilities, permissions: [] }
+    : { acknowledged: true, method: message.method };
+  event.source.postMessage(createResponse(message, result, { sessionId: 'examples-session' }), event.origin);
 });
 function render() { const now = new Date(); const locale = runtime.getConfig('locale') || 'en-US'; time.textContent = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', second: runtime.getConfig('showSeconds') ? '2-digit' : undefined, hour12: false }).format(now); date.textContent = new Intl.DateTimeFormat(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).format(now); }
 runtime.onConfigChange(render); render(); setInterval(() => { if (runtime.state === 'running') render(); }, 1000);
