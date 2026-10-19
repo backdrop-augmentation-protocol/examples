@@ -1,5 +1,7 @@
 # BAP Examples
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 This repository contains a dependency-free, browser-runnable BAP MVP example:
 
 - `component/` is a clock/status component with Standalone and Embedded modes.
