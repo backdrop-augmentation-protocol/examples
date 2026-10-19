@@ -1,10 +1,12 @@
 import { HostRuntime, WallpaperEngineHost } from '../sdk/host-sdk/index.js';
+import { connectCompanion } from '../companion/client.js';
 
 const video = document.querySelector('#video');
 const frameContainer = document.querySelector('#component');
 const fallback = document.querySelector('#fallback');
 const volume = document.querySelector('#volume');
 const toggle = document.querySelector('#toggle');
+const companionStatus = document.querySelector('#companion-status');
 const componentOrigin = window.location.protocol === 'file:' ? '*' : window.location.origin;
 const VIDEO = '../assets/host-wallpaper/flower.webm';
 const optionalBgm = new Audio('../assets/host-wallpaper/bgm.ogg');
@@ -53,6 +55,16 @@ const adapter = {
   currentSize() { return { width: innerWidth, height: innerHeight }; },
 };
 new WallpaperEngineHost(host, adapter);
+
+void connectCompanion().then(async (companion) => {
+  companionStatus.textContent = `Companion: connected (${companion.hello.capabilities.join(', ')})`;
+  await companion.saveWallpaperConfig('bap-host-wallpaper', { locale: 'en-US', showSeconds: true });
+  const config = await companion.loadConfig();
+  console.info('BAP Companion configuration round-trip complete', config.wallpapers?.['bap-host-wallpaper']);
+}).catch((error) => {
+  companionStatus.textContent = 'Companion: offline (host remains available)';
+  console.warn('BAP Companion unavailable', error);
+});
 
 function setMediaState({ paused } = {}) {
   if (paused) { video.pause(); optionalBgm.pause(); fallbackAudio?.suspend(); adapter.pause?.(); }
