@@ -11,8 +11,10 @@ optionalBgm.loop = true;
 let fallbackAudio;
 
 video.src = VIDEO;
+video.preload = 'auto';
 video.volume = Number(volume.value);
 video.muted = true;
+video.load();
 video.play().catch(() => {});
 
 const host = new HostRuntime({
