@@ -6,7 +6,7 @@ const fallback = document.querySelector('#fallback');
 const volume = document.querySelector('#volume');
 const toggle = document.querySelector('#toggle');
 const componentOrigin = window.location.protocol === 'file:' ? '*' : window.location.origin;
-const VIDEO = '../assets/host-wallpaper/flower.mp4';
+const VIDEO = '../assets/host-wallpaper/flower.webm';
 const optionalBgm = new Audio('../assets/host-wallpaper/bgm.ogg');
 optionalBgm.loop = true;
 let fallbackAudio;
@@ -31,7 +31,7 @@ const component = host.mount({
   size: { width: 560, height: 240 },
   allowedOrigin: componentOrigin,
 });
-component.on('fault', () => { fallback.style.display = 'block'; });
+component.on('fault', (fault) => { console.warn('BAP component unavailable; host continues', fault); });
 // The current SDKs expose the transport primitives independently. This tiny
 // demo adapter completes the symmetric request/response side of the iframe
 // handshake while the HostRuntime owns mounting, isolation, and lifecycle.
