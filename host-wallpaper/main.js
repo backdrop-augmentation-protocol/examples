@@ -5,6 +5,7 @@ const frameContainer = document.querySelector('#component');
 const fallback = document.querySelector('#fallback');
 const volume = document.querySelector('#volume');
 const toggle = document.querySelector('#toggle');
+const componentOrigin = window.location.protocol === 'file:' ? '*' : window.location.origin;
 const VIDEO = '../assets/host-wallpaper/flower.mp4';
 const optionalBgm = new Audio('../assets/host-wallpaper/bgm.ogg');
 optionalBgm.loop = true;
@@ -28,7 +29,7 @@ const component = host.mount({
   src: '../time-widget/embedded.html',
   container: frameContainer,
   size: { width: 560, height: 240 },
-  allowedOrigin: window.location.origin,
+  allowedOrigin: componentOrigin,
 });
 component.on('fault', () => { fallback.style.display = 'block'; });
 // The current SDKs expose the transport primitives independently. This tiny
