@@ -1,0 +1,85 @@
+import { HostRuntime, WallpaperEngineHost } from '../sdk/host-sdk/index.js';
+
+const video = document.querySelector('#video');
+const frameContainer = document.querySelector('#component');
+const fallback = document.querySelector('#fallback');
+const volume = document.querySelector('#volume');
+const toggle = document.querySelector('#toggle');
+const VIDEO = '../assets/host-wallpaper/flower.mp4';
+const optionalBgm = new Audio('../assets/host-wallpaper/bgm.ogg');
+optionalBgm.loop = true;
+let fallbackAudio;
+
+video.src = VIDEO;
+video.volume = Number(volume.value);
+video.muted = true;
+video.play().catch(() => {});
+
+const host = new HostRuntime({
+  implementationId: 'org.bap.examples.host-wallpaper',
+  implementationName: 'BAP Host Wallpaper Demo',
+  implementationVersion: '0.1.0',
+  capabilities: ['lifecycle', 'size', 'pause-resume', 'config'],
+});
+const component = host.mount({
+  id: 'org.bap.examples.time-widget',
+  src: '../time-widget/embedded.html',
+  container: frameContainer,
+  size: { width: 560, height: 240 },
+  allowedOrigin: window.location.origin,
+});
+component.on('fault', () => { fallback.style.display = 'block'; });
+// The current SDKs expose the transport primitives independently. This tiny
+// demo adapter completes the symmetric request/response side of the iframe
+// handshake while the HostRuntime owns mounting, isolation, and lifecycle.
+window.addEventListener('message', (event) => {
+  if (event.source !== component.iframe.contentWindow || event.origin !== window.location.origin) return;
+  const message = event.data;
+  if (message?.kind !== 'request' || !message.id) return;
+  const result = message.method === 'hello'
+    ? { protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, sessionId: 'examples-session', capabilities: ['lifecycle', 'config'], permissions: [] }
+    : { acknowledged: true, method: message.method };
+  event.source.postMessage({ protocol: message.protocol, kind: 'response', id: `res-${message.id}`, correlationId: message.id, timestamp: new Date().toISOString(), ok: true, result, sessionId: 'examples-session' }, event.origin);
+});
+
+const adapter = {
+  onSize(listener) { window.addEventListener('resize', () => listener({ width: innerWidth, height: innerHeight })); },
+  onPause(listener) { this.pause = listener; },
+  onResume(listener) { this.resume = listener; },
+  currentSize() { return { width: innerWidth, height: innerHeight }; },
+};
+new WallpaperEngineHost(host, adapter);
+
+function setMediaState({ paused } = {}) {
+  if (paused) { video.pause(); optionalBgm.pause(); fallbackAudio?.suspend(); adapter.pause?.(); }
+  else { video.play().catch(() => {}); if (!video.muted) startAudio(); adapter.resume?.(); }
+}
+function startAudio() {
+  optionalBgm.volume = Number(volume.value);
+  optionalBgm.play().catch(() => {
+    if (!fallbackAudio) {
+      fallbackAudio = new AudioContext();
+      const oscillator = fallbackAudio.createOscillator();
+      const gain = fallbackAudio.createGain();
+      oscillator.type = 'sine'; oscillator.frequency.value = 220; gain.gain.value = 0.025;
+      oscillator.connect(gain).connect(fallbackAudio.destination); oscillator.start();
+    }
+    fallbackAudio.resume();
+  });
+}
+window.wallpaperPropertyListener = {
+  applyUserProperties(properties) {
+    const next = properties || {};
+    if (next.videoVolume?.value !== undefined) volume.value = String(next.videoVolume.value);
+    if (next.mute?.value !== undefined) video.muted = Boolean(next.mute.value);
+    video.volume = Number(volume.value);
+    if (!video.muted) startAudio(); else { optionalBgm.pause(); fallbackAudio?.suspend(); }
+    toggle.textContent = video.muted ? 'Unmute' : 'Mute';
+  },
+};
+window.wallpaperRegisterAudioListener = () => {};
+window.wallpaperRequestPaused = () => setMediaState({ paused: true });
+window.wallpaperRequestResumed = () => setMediaState({ paused: false });
+
+volume.oninput = () => { video.volume = Number(volume.value); optionalBgm.volume = Number(volume.value); };
+toggle.onclick = () => { video.muted = !video.muted; toggle.textContent = video.muted ? 'Unmute' : 'Mute'; if (video.muted) { optionalBgm.pause(); fallbackAudio?.suspend(); } else startAudio(); };

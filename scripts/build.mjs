@@ -6,7 +6,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = resolve(root, 'dist');
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
-for (const directory of ['component', 'host', 'shared', 'companion']) {
+for (const directory of ['component', 'host', 'shared', 'companion', 'host-wallpaper', 'time-widget', 'assets']) {
   await cp(resolve(root, directory), resolve(dist, directory), { recursive: true });
 }
 await mkdir(resolve(dist, 'sdk', 'host-sdk'), { recursive: true });

@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "type": "web",
+  "file": "index.html",
+  "title": "BAP Host Wallpaper Demo",
+  "description": "A minimal BAP Host SDK Wallpaper Engine demo with a looping open video and embedded time widget.",
+  "tags": ["web", "demo"],
+  "general": { "properties": {
+    "videoVolume": { "type": "slider", "text": "Video volume", "value": 0.0, "min": 0.0, "max": 1.0, "step": 0.05 },
+    "mute": { "type": "bool", "text": "Mute", "value": false }
+  } },
+  "visibility": "public"
+}

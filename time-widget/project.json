@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "type": "web",
+  "file": "index.html",
+  "title": "BAP Time Widget Demo",
+  "description": "A dual-mode BAP Component SDK time widget with an open landscape background in Standalone Mode.",
+  "tags": ["web", "demo", "clock"],
+  "visibility": "public"
+}
