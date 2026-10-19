@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 const configPath = join(root, 'companion', 'mock-state.json');
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json' };
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.mp4': 'video/mp4', '.jpg': 'image/jpeg', '.ogg': 'audio/ogg' };
 const server = http.createServer(async (req, res) => {
   try {
     if (req.url === '/api/health') return send(res, { name: 'BAP Companion Mock', status: 'ready' });
@@ -17,7 +17,7 @@ const server = http.createServer(async (req, res) => {
     if (!path.startsWith(root)) return send(res, { error: 'forbidden' }, 403);
     if (!extname(path)) path = join(path, 'index.html');
     res.writeHead(200, { 'content-type': types[extname(path)] ?? 'application/octet-stream' }); res.end(await readFile(path));
-  } catch (error) { send(res, { error: error.message }, error.code === 'ENOENT' ? 404 : 500); }
+  } catch (error) { if (!res.headersSent) send(res, { error: error.message }, error.code === 'ENOENT' ? 404 : 500); else res.destroy(); }
 });
 function bodyOf(req) { return new Promise((resolveBody, reject) => { let data = ''; req.on('data', chunk => data += chunk); req.on('end', () => resolveBody(JSON.parse(data || '{}'))); req.on('error', reject); }); }
 function send(res, data, status = 200) { res.writeHead(status, { 'content-type': 'application/json', 'access-control-allow-origin': '*' }); res.end(JSON.stringify(data)); }
