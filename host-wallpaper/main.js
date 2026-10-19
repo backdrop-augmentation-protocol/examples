@@ -42,7 +42,8 @@ window.addEventListener('message', (event) => {
   const result = message.method === 'hello'
     ? { protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, sessionId: 'examples-session', capabilities: ['lifecycle', 'config'], permissions: [] }
     : { acknowledged: true, method: message.method };
-  event.source.postMessage({ protocol: message.protocol, kind: 'response', id: `res-${message.id}`, correlationId: message.id, timestamp: new Date().toISOString(), ok: true, result, sessionId: 'examples-session' }, event.origin);
+  const responseOrigin = event.origin === 'null' ? '*' : event.origin;
+  event.source.postMessage({ protocol: message.protocol, kind: 'response', id: `res-${message.id}`, correlationId: message.id, timestamp: new Date().toISOString(), ok: true, result, sessionId: 'examples-session' }, responseOrigin);
 });
 
 const adapter = {
