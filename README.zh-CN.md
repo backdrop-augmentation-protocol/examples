@@ -2,17 +2,15 @@
 
 [English](README.md) | 中文
 
-本仓库提供一个可在浏览器中运行的 BAP MVP 集成示例：
+本仓库提供 BAP MVP 的浏览器示例和真实 Wallpaper Engine Web Demo：
 
-- `component/` 是支持 Standalone/Embedded 双模式的时钟组件；
-- `host/` 使用官方 `host-sdk` 的 `HostRuntime` 挂载 iframe；
-- `component/` 使用官方 `component-sdk` 的 `ComponentRuntime`；
-- `companion/` 是提供配置读写和健康检查的本地 HTTP mock；
-- `shared/protocol.js` 仅是官方 SDK 传输映射和 Core Profile 信封的适配层，不是第二套协议定义。
+- `component/`：支持 Standalone/Embedded 的旧版时钟组件示例。
+- `host/`：最小 Host 与 Companion mock 浏览器示例。
+- `host-wallpaper/`：使用官方 Host SDK 的真实 WE 主壁纸，包含循环视频、可选 BGM、WE 回调、暂停/恢复和 iframe 组件故障隔离。
+- `time-widget/`：使用官方 Component SDK 的双模式时间/日期组件。
+- `assets/ASSET-PROVENANCE.md`：开放许可素材、来源和 SHA-256 记录。
 
-示例覆盖 iframe + `postMessage`、请求/响应与事件、配置、生命周期、暂停/恢复以及 Companion 配置持久化。构建时会把相邻官方 SDK 仓库的发布文件复制到 `dist/sdk/`，示例不会重新实现 SDK 的运行时行为。
-
-## 运行
+## 构建与运行
 
 ```text
 npm run build
@@ -20,16 +18,13 @@ npm test
 npm run serve
 ```
 
-`npm run build` 要求相邻目录存在 `../host-sdk` 和 `../component-sdk`。打开 `http://127.0.0.1:4173/host/` 查看 Embedded 示例，直接打开 `/component/` 查看 Standalone 模式。
+浏览器示例：
 
-HTTP 冒烟检查应确认：
+- `http://127.0.0.1:4173/host/`
+- `http://127.0.0.1:4173/component/`
+- `http://127.0.0.1:4173/host-wallpaper/`
+- `http://127.0.0.1:4173/time-widget/`
 
-```text
-GET /host/                  -> 200
-GET /component/             -> 200
-GET /sdk/host-sdk/host.js   -> 200
-GET /api/health             -> ready
-GET /api/config             -> 配置可读取
-```
+真实壁纸 Demo 构建后可复制到临时 Wallpaper Engine Web 壁纸项目中。主壁纸使用仓库内的 MDN 花朵视频；如果需要 BGM，可将获得许可的 `bgm.ogg` 放入 `assets/host-wallpaper/`。缺少该文件时，Demo 使用 Web Audio fallback 音调验证静音和音量行为。
 
-构建输出位于 `dist/`，并由 Git 忽略。
+`npm run build` 会从相邻的 `host-sdk` 和 `component-sdk` 仓库复制官方 SDK 到 `dist/sdk/`，不会重复实现 SDK 运行时。
