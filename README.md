@@ -55,3 +55,11 @@ GET /sdk/host-sdk/host.js   -> 200
 GET /api/health             -> ready
 GET /api/config             -> persisted configuration
 ```
+
+## Hidden Workshop test items
+
+The built `dist/time-widget/` directory contains a root-level `manifest.json`
+and can be used as the component payload for a hidden Workshop test item. The
+host wallpaper uses the existing `host-wallpaper/project.json` package and
+should be published as a separate hidden test item. Keep both items hidden
+while validating Companion discovery and resource loading.

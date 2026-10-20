@@ -1,0 +1,18 @@
+{
+  "protocol": { "name": "bap", "version": "0.1.0", "profile": "core" },
+  "id": "org.bap.examples.time-widget",
+  "name": "BAP Time Widget Demo",
+  "version": "0.1.0",
+  "implementationVersion": "0.1.0",
+  "role": "component",
+  "capabilities": ["lifecycle", "config"],
+  "permissions": [],
+  "modes": ["standalone", "embedded"],
+  "entrypoints": {
+    "default": "./index.html",
+    "standalone": "./index.html",
+    "embedded": "./embedded.html"
+  },
+  "configScopes": ["global", "wallpaper"],
+  "description": "Open-license BAP dual-mode time widget demo."
+}
