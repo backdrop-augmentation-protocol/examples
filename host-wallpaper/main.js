@@ -58,7 +58,8 @@ new WallpaperEngineHost(host, adapter);
 
 void connectCompanion().then(async (companion) => {
   const capabilities = companion.hello?.capabilities ?? [];
-  companionStatus.textContent = `Companion: connected (${capabilities.join(', ') || 'no advertised capabilities'})`;
+  const components = await companion.listComponents();
+  companionStatus.textContent = `Companion: connected (${capabilities.join(', ') || 'no advertised capabilities'}; components: ${components.length})`;
   await companion.saveWallpaperConfig('bap-host-wallpaper', { locale: 'en-US', showSeconds: true });
   const config = await companion.loadConfig();
   console.info('BAP Companion configuration round-trip complete', config.wallpapers?.['bap-host-wallpaper']);

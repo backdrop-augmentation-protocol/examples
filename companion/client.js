@@ -13,5 +13,16 @@ export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clie
   const helloResponse = await request('hello', { role: 'host', identity: { id: 'org.bap.examples.host-wallpaper', name: clientName, version: '0.1.0' }, supportedVersions: ['0.1.0'], capabilities: ['component-discovery', 'config'], requestedPermissions: ['component.discovery', 'config.read', 'config.write'] });
   const hello = helloResponse?.result ?? helloResponse;
   const authFetch = (path, options = {}) => fetch(`${httpBase}${path}`, { ...options, headers: { authorization: `Bearer ${session.accessToken}`, ...(options.headers || {}) } });
-  return { session, hello, socket, async loadConfig() { const response = await authFetch('/v1/config'); if (!response.ok) throw new Error(`Companion config read failed: HTTP ${response.status}`); return response.json(); }, async saveWallpaperConfig(id, values) { const response = await authFetch(`/v1/config/wallpapers/${encodeURIComponent(id)}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(values) }); if (!response.ok) throw new Error(`Companion config write failed: HTTP ${response.status}`); }, close() { socket.close(); } };
+  async function readJson(path, label) { const response = await authFetch(path); if (!response.ok) throw new Error(`${label}: HTTP ${response.status}`); return response.json(); }
+  return {
+    session,
+    hello,
+    socket,
+    listComponents() { return readJson('/v1/components', 'Companion component discovery failed'); },
+    getComponentManifest(id) { return readJson(`/v1/components/${encodeURIComponent(id)}/manifest`, 'Companion manifest read failed'); },
+    async fetchComponentResource(id, path) { const response = await authFetch(`/v1/components/${encodeURIComponent(id)}/resources/${path.split('/').map(encodeURIComponent).join('/')}`); if (!response.ok) throw new Error(`Companion resource read failed: HTTP ${response.status}`); return response.blob(); },
+    async loadConfig() { return readJson('/v1/config', 'Companion config read failed'); },
+    async saveWallpaperConfig(id, values) { const response = await authFetch(`/v1/config/wallpapers/${encodeURIComponent(id)}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(values) }); if (!response.ok) throw new Error(`Companion config write failed: HTTP ${response.status}`); },
+    close() { socket.close(); }
+  };
 }
