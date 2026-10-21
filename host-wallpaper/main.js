@@ -33,7 +33,7 @@ function mountComponent(src, source) {
     id: componentId,
     src,
     container: frameContainer,
-    size: { width: 560, height: 240 },
+    size: { width: frameContainer.clientWidth, height: frameContainer.clientHeight },
     allowedOrigin: new URL(src, window.location.href).origin,
   });
   component.on('ready', () => { companionStatus.textContent += `; widget: ${source}`; });
@@ -54,10 +54,10 @@ window.addEventListener('message', (event) => {
 });
 
 const adapter = {
-  onSize(listener) { window.addEventListener('resize', () => listener({ width: innerWidth, height: innerHeight })); },
+  onSize(listener) { window.addEventListener('resize', () => listener({ width: frameContainer.clientWidth, height: frameContainer.clientHeight })); },
   onPause(listener) { this.pause = listener; },
   onResume(listener) { this.resume = listener; },
-  currentSize() { return { width: innerWidth, height: innerHeight }; },
+  currentSize() { return { width: frameContainer.clientWidth, height: frameContainer.clientHeight }; },
 };
 new WallpaperEngineHost(host, adapter);
 
