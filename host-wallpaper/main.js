@@ -7,7 +7,8 @@ const fallback = document.querySelector('#fallback');
 const volume = document.querySelector('#volume');
 const toggle = document.querySelector('#toggle');
 const companionStatus = document.querySelector('#companion-status');
-const componentOrigin = window.location.protocol === 'file:' ? '*' : window.location.origin;
+const bundledComponent = '../time-widget/embedded.html';
+const componentId = 'org.bap.examples.time-widget';
 const VIDEO = '../assets/host-wallpaper/flower.webm';
 const optionalBgm = new Audio('../assets/host-wallpaper/bgm.ogg');
 optionalBgm.loop = true;
@@ -26,19 +27,23 @@ const host = new HostRuntime({
   implementationVersion: '0.1.0',
   capabilities: ['lifecycle', 'size', 'pause-resume', 'config'],
 });
-const component = host.mount({
-  id: 'org.bap.examples.time-widget',
-  src: '../time-widget/embedded.html',
-  container: frameContainer,
-  size: { width: 560, height: 240 },
-  allowedOrigin: componentOrigin,
-});
-component.on('fault', (fault) => { console.warn('BAP component unavailable; host continues', fault); });
+let component;
+function mountComponent(src, source) {
+  component = host.mount({
+    id: componentId,
+    src,
+    container: frameContainer,
+    size: { width: 560, height: 240 },
+    allowedOrigin: new URL(src, window.location.href).origin,
+  });
+  component.on('ready', () => { companionStatus.textContent += `; widget: ${source}`; });
+  component.on('fault', (fault) => { console.warn('BAP component unavailable; host continues', fault); });
+}
 // The current SDKs expose the transport primitives independently. This tiny
 // demo adapter completes the symmetric request/response side of the iframe
 // handshake while the HostRuntime owns mounting, isolation, and lifecycle.
 window.addEventListener('message', (event) => {
-  if (event.source !== component.iframe.contentWindow || event.origin !== window.location.origin) return;
+  if (!component || event.source !== component.iframe.contentWindow || !component.acceptsOrigin(event.origin)) return;
   const message = event.data;
   if (message?.kind !== 'request' || !message.id) return;
   const result = message.method === 'hello'
@@ -60,12 +65,19 @@ void connectCompanion().then(async (companion) => {
   const capabilities = companion.hello?.capabilities ?? [];
   const components = await companion.listComponents();
   companionStatus.textContent = `Companion: connected (${capabilities.join(', ') || 'no advertised capabilities'}; components: ${components.length})`;
+  if (components.some((item) => item.id === componentId)) {
+    const url = await companion.getComponentLaunchUrl(componentId);
+    mountComponent(url, 'Workshop');
+  } else {
+    mountComponent(bundledComponent, 'bundled');
+  }
   await companion.saveWallpaperConfig('bap-host-wallpaper', { locale: 'en-US', showSeconds: true });
   const config = await companion.loadConfig();
   console.info('BAP Companion configuration round-trip complete', config.wallpapers?.['bap-host-wallpaper']);
 }).catch((error) => {
   companionStatus.textContent = 'Companion: offline (host remains available)';
   console.warn('BAP Companion unavailable', error);
+  if (!component) mountComponent(bundledComponent, 'bundled');
 });
 
 function setMediaState({ paused } = {}) {

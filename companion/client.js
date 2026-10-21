@@ -20,6 +20,11 @@ export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clie
     socket,
     listComponents() { return readJson('/v1/components', 'Companion component discovery failed'); },
     getComponentManifest(id) { return readJson(`/v1/components/${encodeURIComponent(id)}/manifest`, 'Companion manifest read failed'); },
+    async getComponentLaunchUrl(id) {
+      const response = await authFetch(`/v1/components/${encodeURIComponent(id)}/launch`, { method: 'POST' });
+      if (!response.ok) throw new Error(`Companion component launch failed: HTTP ${response.status}`);
+      return (await response.json()).url;
+    },
     async fetchComponentResource(id, path) { const response = await authFetch(`/v1/components/${encodeURIComponent(id)}/resources/${path.split('/').map(encodeURIComponent).join('/')}`); if (!response.ok) throw new Error(`Companion resource read failed: HTTP ${response.status}`); return response.blob(); },
     async loadConfig() { return readJson('/v1/config', 'Companion config read failed'); },
     async saveWallpaperConfig(id, values) { const response = await authFetch(`/v1/config/wallpapers/${encodeURIComponent(id)}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(values) }); if (!response.ok) throw new Error(`Companion config write failed: HTTP ${response.status}`); },
