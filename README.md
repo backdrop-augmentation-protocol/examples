@@ -58,8 +58,10 @@ GET /api/config             -> persisted configuration
 
 ## Hidden Workshop test items
 
-The built `dist/time-widget/` directory contains a root-level `manifest.json`
-and can be used as the component payload for a hidden Workshop test item. The
-host wallpaper uses the existing `host-wallpaper/project.json` package and
-should be published as a separate hidden test item. Keep both items hidden
-while validating Companion discovery and resource loading.
+`npm run build` creates two self-contained Wallpaper Engine project folders:
+`dist/workshop-host-wallpaper/` and `dist/workshop-time-widget/`. Each contains
+its own `project.json`, SDK, and media assets. Publish them as separate hidden
+Workshop items. Start Companion with `BAP_DISCOVER_STEAM_WORKSHOP=1` and, when
+Steam is installed outside its default location, set `BAP_STEAM_ROOT` to the
+Steam installation directory. The Host loads the subscribed component through
+Companion and falls back to its bundled copy when Companion is unavailable.
