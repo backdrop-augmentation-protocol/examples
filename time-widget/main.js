@@ -10,6 +10,7 @@ const client = embedded ? new PostMessageClient({ target: window.parent, targetO
 const runtime = new ComponentRuntime({ manifest, mode: embedded ? 'embedded' : 'standalone', client, config: { locale: 'en-US', showSeconds: false } });
 const time = document.querySelector('#time'); const date = document.querySelector('#date');
 if (embedded) window.addEventListener('message', (event) => {
+  console.info('BAP component message', JSON.stringify({ origin: event.origin, sourceMatches: event.source === window.parent, kind: event.data?.kind, method: event.data?.method, correlationId: event.data?.correlationId }));
   if (event.source !== window.parent) return;
   const message = event.data;
   if (message?.kind !== 'request' || !message.id) return;

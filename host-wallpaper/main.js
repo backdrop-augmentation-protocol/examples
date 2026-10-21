@@ -37,12 +37,13 @@ function mountComponent(src, source) {
     allowedOrigin: new URL(src, window.location.href).origin,
   });
   component.on('ready', () => { companionStatus.textContent += `; widget: ${source}`; });
-  component.on('fault', (fault) => { console.warn('BAP component unavailable; host continues', fault); });
+  component.on('fault', (fault) => { console.warn('BAP component unavailable; host continues', JSON.stringify(fault)); });
 }
 // The current SDKs expose the transport primitives independently. This tiny
 // demo adapter completes the symmetric request/response side of the iframe
 // handshake while the HostRuntime owns mounting, isolation, and lifecycle.
 window.addEventListener('message', (event) => {
+  console.info('BAP host message', JSON.stringify({ origin: event.origin, sourceMatches: event.source === component?.iframe.contentWindow, accepted: component?.acceptsOrigin(event.origin), kind: event.data?.kind, method: event.data?.method, correlationId: event.data?.correlationId }));
   if (!component || event.source !== component.iframe.contentWindow || !component.acceptsOrigin(event.origin)) return;
   const message = event.data;
   if (message?.kind !== 'request' || !message.id) return;
