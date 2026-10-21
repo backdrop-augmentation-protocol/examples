@@ -43,7 +43,6 @@ function mountComponent(src, source) {
 // demo adapter completes the symmetric request/response side of the iframe
 // handshake while the HostRuntime owns mounting, isolation, and lifecycle.
 window.addEventListener('message', (event) => {
-  console.info('BAP host message', JSON.stringify({ origin: event.origin, sourceMatches: event.source === component?.iframe.contentWindow, accepted: component?.acceptsOrigin(event.origin), kind: event.data?.kind, method: event.data?.method, correlationId: event.data?.correlationId }));
   if (!component || event.source !== component.iframe.contentWindow || !component.acceptsOrigin(event.origin)) return;
   const message = event.data;
   if (message?.kind !== 'request' || !message.id) return;
