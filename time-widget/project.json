@@ -1,9 +1,25 @@
 {
-  "version": 2,
-  "type": "web",
-  "file": "index.html",
-  "title": "BAP Time Widget Demo",
+  "contentrating": "Everyone",
   "description": "A dual-mode BAP Component SDK time widget with an open landscape background in Standalone Mode.",
-  "tags": ["web", "demo", "clock"],
-  "visibility": "public"
+  "file": "index.html",
+  "general": {
+    "properties": {
+      "schemecolor": {
+        "order": 0,
+        "text": "ui_browse_properties_scheme_color",
+        "type": "color",
+        "value": "0 0 0"
+      }
+    }
+  },
+  "preview": "preview.jpg",
+  "ratingsex": "none",
+  "ratingviolence": "none",
+  "snapshotformat": -1,
+  "snapshotoverlay": "",
+  "tags": ["web"],
+  "title": "BAP Time Widget Demo",
+  "type": "web",
+  "version": 3,
+  "visibility": "private"
 }
