@@ -1,6 +1,7 @@
-import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { validateWorkshopPackage } from './validate-workshop-package.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = resolve(root, 'dist');
@@ -20,23 +21,46 @@ async function replaceIn(file, replacements) {
   await writeFile(file, content);
 }
 
+async function copyFile(source, destination) {
+  await mkdir(dirname(destination), { recursive: true });
+  await cp(source, destination);
+}
+
 const widgetPackage = resolve(dist, 'workshop-time-widget');
-await cp(resolve(dist, 'time-widget'), widgetPackage, { recursive: true });
-await cp(resolve(dist, 'sdk'), resolve(widgetPackage, 'sdk'), { recursive: true });
-await cp(resolve(dist, 'assets'), resolve(widgetPackage, 'assets'), { recursive: true });
+await mkdir(widgetPackage, { recursive: true });
+for (const file of ['index.html', 'embedded.html', 'main.js', 'manifest.json', 'project.json', 'preview.jpg']) {
+  await copyFile(resolve(root, 'time-widget', file), resolve(widgetPackage, file));
+}
+await cp(resolve(root, '..', 'component-sdk', 'src'), resolve(widgetPackage, 'sdk', 'component-sdk'), { recursive: true });
+await copyFile(resolve(root, 'assets', 'time-widget', 'river-sunset.jpg'), resolve(widgetPackage, 'assets', 'time-widget', 'river-sunset.jpg'));
 await replaceIn(resolve(widgetPackage, 'main.js'), [["'../sdk/", "'./sdk/"]]);
 await replaceIn(resolve(widgetPackage, 'index.html'), [["../assets/", "./assets/"]]);
 
 const hostPackage = resolve(dist, 'workshop-host-wallpaper');
-await cp(resolve(dist, 'host-wallpaper'), hostPackage, { recursive: true });
-await cp(resolve(dist, 'sdk'), resolve(hostPackage, 'sdk'), { recursive: true });
-await cp(resolve(dist, 'assets'), resolve(hostPackage, 'assets'), { recursive: true });
-await cp(resolve(dist, 'companion'), resolve(hostPackage, 'companion'), { recursive: true });
-await cp(resolve(dist, 'time-widget'), resolve(hostPackage, 'time-widget'), { recursive: true });
+await mkdir(hostPackage, { recursive: true });
+for (const file of ['index.html', 'main.js', 'project.json', 'preview.gif']) {
+  await copyFile(resolve(root, 'host-wallpaper', file), resolve(hostPackage, file));
+}
+await cp(resolve(root, '..', 'host-sdk', 'dist'), resolve(hostPackage, 'sdk', 'host-sdk'), { recursive: true });
+await cp(resolve(root, '..', 'component-sdk', 'src'), resolve(hostPackage, 'sdk', 'component-sdk'), { recursive: true });
+await copyFile(resolve(root, 'companion', 'client.js'), resolve(hostPackage, 'companion', 'client.js'));
+for (const file of ['index.html', 'embedded.html', 'main.js']) {
+  await copyFile(resolve(root, 'time-widget', file), resolve(hostPackage, 'time-widget', file));
+}
+await copyFile(resolve(root, 'assets', 'host-wallpaper', 'flower.webm'), resolve(hostPackage, 'assets', 'host-wallpaper', 'flower.webm'));
+await copyFile(resolve(root, 'assets', 'time-widget', 'river-sunset.jpg'), resolve(hostPackage, 'assets', 'time-widget', 'river-sunset.jpg'));
+try {
+  await stat(resolve(root, 'assets', 'host-wallpaper', 'bgm.ogg'));
+  await copyFile(resolve(root, 'assets', 'host-wallpaper', 'bgm.ogg'), resolve(hostPackage, 'assets', 'host-wallpaper', 'bgm.ogg'));
+} catch (error) {
+  if (error.code !== 'ENOENT') throw error;
+}
 await replaceIn(resolve(hostPackage, 'main.js'), [
   ["'../sdk/", "'./sdk/"],
   ["'../companion/", "'./companion/"],
   ["'../time-widget/", "'./time-widget/"],
   ["'../assets/", "'./assets/"],
 ]);
+await validateWorkshopPackage(widgetPackage);
+await validateWorkshopPackage(hostPackage);
 console.log(`Built ${dist}`);

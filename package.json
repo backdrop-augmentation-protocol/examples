@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "validate:workshop": "node scripts/validate-workshop-package.mjs dist/workshop-host-wallpaper dist/workshop-time-widget",
     "test": "node --test test/*.test.mjs",
     "serve": "node scripts/serve.mjs"
   }
