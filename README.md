@@ -64,6 +64,12 @@ not bundle the component or Companion service; it only contains a small client
 that connects to the separately running Windows Companion. Without Companion,
 the video wallpaper remains available but no widget is mounted.
 
+The component package's `embedded.html` is built as a self-contained document.
+The Host retrieves it through the Companion's authenticated resource endpoint
+and mounts it with the Host SDK's isolated `srcdoc` mode. Component files are
+not copied into the selected Host wallpaper project, and no additional WE item
+is created. The standalone entrypoint keeps its own package resources.
+
 For local integration, start Companion with `BAP_WORKSHOP_ROOTS` pointing to
 the independent time-widget project directory. For subscribed Workshop
 components, use `BAP_DISCOVER_STEAM_WORKSHOP=1` and set `BAP_STEAM_ROOT` when

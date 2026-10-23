@@ -26,13 +26,12 @@ const host = new HostRuntime({
   capabilities: ['lifecycle', 'size', 'pause-resume', 'config'],
 });
 let component;
-function mountComponent(src) {
+function mountComponent(srcdoc) {
   component = host.mount({
     id: componentId,
-    src,
+    srcdoc,
     container: frameContainer,
     size: { width: frameContainer.clientWidth, height: frameContainer.clientHeight },
-    allowedOrigin: new URL(src, window.location.href).origin,
   });
   component.on('ready', () => { companionStatus.textContent = 'Companion: connected; widget: running'; });
   component.on('fault', (fault) => { companionStatus.textContent = 'Companion: connected; widget: unavailable'; console.warn('BAP component unavailable; host continues', JSON.stringify(fault)); });
@@ -47,7 +46,7 @@ window.addEventListener('message', (event) => {
   const result = message.method === 'hello'
     ? { protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, sessionId: 'examples-session', capabilities: ['lifecycle', 'config'], permissions: [] }
     : { acknowledged: true, method: message.method };
-  const responseOrigin = new URL(component.iframe.src, window.location.href).protocol === 'file:' ? '*' : event.origin;
+  const responseOrigin = '*';
   event.source.postMessage({ protocol: message.protocol, kind: 'response', id: `res-${message.id}`, correlationId: message.id, timestamp: new Date().toISOString(), ok: true, result, sessionId: 'examples-session' }, responseOrigin);
 });
 
@@ -66,8 +65,9 @@ async function connectToCompanion() {
     const components = await companion.listComponents();
     companionStatus.textContent = `Companion: connected; discovered: ${components.length}`;
     if (components.some((item) => item.id === componentId)) {
-      const url = await companion.getComponentLaunchUrl(componentId);
-      mountComponent(url);
+      const embedded = await companion.fetchComponentResource(componentId, 'embedded.html');
+      if (embedded.size > 1024 * 1024) throw new Error('Embedded component exceeds the 1 MiB demo limit');
+      mountComponent(await embedded.text());
     } else {
       companionStatus.textContent = 'Companion: connected; time widget not discovered';
     }

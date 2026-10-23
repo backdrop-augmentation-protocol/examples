@@ -37,6 +37,11 @@ npm run serve
 只保留连接独立 Windows Companion 的轻量客户端。Companion 不可用时，视频壁纸仍可运行，
 但不会挂载组件。
 
+组件包的 `embedded.html` 在构建时生成自包含文档。宿主通过 Companion 的鉴权
+资源接口读取该文档，再使用 Host SDK 的隔离 `srcdoc` 模式挂载。组件文件不会
+复制进当前选中的宿主壁纸项目，也不会额外生成 WE item；独立模式入口仍使用
+组件包内的资源。
+
 本地联调时，启动 Companion 前将 `BAP_WORKSHOP_ROOTS` 指向独立的时间组件项目目录。
 如需发现已订阅的 Workshop 组件，可设置 `BAP_DISCOVER_STEAM_WORKSHOP=1`；若 Steam 不在默认安装位置，
 还需设置 `BAP_STEAM_ROOT`。Wallpaper Engine 壁纸的 Workshop 发布或更新一律通过官方 WE 编辑器。
