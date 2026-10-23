@@ -5,7 +5,10 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "validate:workshop": "node scripts/validate-workshop-package.mjs dist/workshop-host-wallpaper dist/workshop-time-widget",
-    "test": "node --test test/*.test.mjs",
+    "test": "npm run build && node --test test/*.test.mjs && npm run validate:workshop",
     "serve": "node scripts/serve.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
   }
 }

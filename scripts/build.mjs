@@ -2,6 +2,7 @@ import { cp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateProjectMetadata, validateWorkshopPackage } from './validate-workshop-package.mjs';
+import { buildInlineEmbedded } from './build-inline-embedded.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 for (const directory of ['host-wallpaper', 'time-widget']) {
@@ -38,6 +39,10 @@ await cp(resolve(root, '..', 'component-sdk', 'src'), resolve(widgetPackage, 'sd
 await copyFile(resolve(root, 'assets', 'time-widget', 'river-sunset.jpg'), resolve(widgetPackage, 'assets', 'time-widget', 'river-sunset.jpg'));
 await replaceIn(resolve(widgetPackage, 'main.js'), [["'../sdk/", "'./sdk/"]]);
 await replaceIn(resolve(widgetPackage, 'index.html'), [["../assets/", "./assets/"]]);
+await writeFile(resolve(widgetPackage, 'embedded.html'), await buildInlineEmbedded(
+  await readFile(resolve(root, 'time-widget', 'embedded.html'), 'utf8'),
+  resolve(widgetPackage, 'main.js'),
+));
 
 const hostPackage = resolve(dist, 'workshop-host-wallpaper');
 await mkdir(hostPackage, { recursive: true });
