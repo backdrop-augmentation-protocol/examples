@@ -79,3 +79,11 @@ test('rejects a different metadata version', async t => {
   const root = await fixture(t, { ...base, version: 3 });
   await assert.rejects(validateWorkshopPackage(root), /version must be 2/);
 });
+
+test('rejects a host package that bundles the time widget', async t => {
+  const root = await fixture(t, { ...base, title: 'BAP Host Wallpaper Demo', preview: 'preview.gif', tags: ['Nature'] });
+  await writeFile(join(root, 'preview.gif'), 'preview');
+  await mkdir(join(root, 'time-widget'));
+  await writeFile(join(root, 'time-widget', 'embedded.html'), 'bundled widget');
+  await assert.rejects(validateWorkshopPackage(root), /must not bundle the time widget/);
+});

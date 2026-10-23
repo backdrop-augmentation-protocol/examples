@@ -3,11 +3,9 @@ import { connectCompanion } from '../companion/client.js';
 
 const video = document.querySelector('#video');
 const frameContainer = document.querySelector('#component');
-const fallback = document.querySelector('#fallback');
 const volume = document.querySelector('#volume');
 const toggle = document.querySelector('#toggle');
 const companionStatus = document.querySelector('#companion-status');
-const bundledComponent = '../time-widget/embedded.html';
 const componentId = 'org.bap.examples.time-widget';
 const VIDEO = '../assets/host-wallpaper/flower.webm';
 const optionalBgm = new Audio('../assets/host-wallpaper/bgm.ogg');
@@ -28,7 +26,7 @@ const host = new HostRuntime({
   capabilities: ['lifecycle', 'size', 'pause-resume', 'config'],
 });
 let component;
-function mountComponent(src, source) {
+function mountComponent(src) {
   component = host.mount({
     id: componentId,
     src,
@@ -36,8 +34,8 @@ function mountComponent(src, source) {
     size: { width: frameContainer.clientWidth, height: frameContainer.clientHeight },
     allowedOrigin: new URL(src, window.location.href).origin,
   });
-  component.on('ready', () => { companionStatus.textContent += `; widget: ${source}`; });
-  component.on('fault', (fault) => { console.warn('BAP component unavailable; host continues', JSON.stringify(fault)); });
+  component.on('ready', () => { companionStatus.textContent = 'Companion: connected; widget: running'; });
+  component.on('fault', (fault) => { companionStatus.textContent = 'Companion: connected; widget: unavailable'; console.warn('BAP component unavailable; host continues', JSON.stringify(fault)); });
 }
 // The current SDKs expose the transport primitives independently. This tiny
 // demo adapter completes the symmetric request/response side of the iframe
@@ -61,24 +59,32 @@ const adapter = {
 };
 new WallpaperEngineHost(host, adapter);
 
-void connectCompanion().then(async (companion) => {
-  const capabilities = companion.hello?.capabilities ?? [];
-  const components = await companion.listComponents();
-  companionStatus.textContent = `Companion: connected (${capabilities.join(', ') || 'no advertised capabilities'}; components: ${components.length})`;
-  if (components.some((item) => item.id === componentId)) {
-    const url = await companion.getComponentLaunchUrl(componentId);
-    mountComponent(url, 'Workshop');
-  } else {
-    mountComponent(bundledComponent, 'bundled');
+async function connectToCompanion() {
+  let companion;
+  try {
+    companion = await connectCompanion();
+    const components = await companion.listComponents();
+    companionStatus.textContent = `Companion: connected; discovered: ${components.length}`;
+    if (components.some((item) => item.id === componentId)) {
+      const url = await companion.getComponentLaunchUrl(componentId);
+      mountComponent(url);
+    } else {
+      companionStatus.textContent = 'Companion: connected; time widget not discovered';
+    }
+    companion.socket.addEventListener('close', () => {
+      component?.stop();
+      component = undefined;
+      companionStatus.textContent = 'Companion: offline; reconnecting...';
+      setTimeout(connectToCompanion, 3000);
+    }, { once: true });
+  } catch (error) {
+    companion?.close();
+    companionStatus.textContent = 'Companion: offline; reconnecting...';
+    console.warn('BAP Companion unavailable', error);
+    setTimeout(connectToCompanion, 3000);
   }
-  await companion.saveWallpaperConfig('bap-host-wallpaper', { locale: 'en-US', showSeconds: true });
-  const config = await companion.loadConfig();
-  console.info('BAP Companion configuration round-trip complete', config.wallpapers?.['bap-host-wallpaper']);
-}).catch((error) => {
-  companionStatus.textContent = 'Companion: offline (host remains available)';
-  console.warn('BAP Companion unavailable', error);
-  if (!component) mountComponent(bundledComponent, 'bundled');
-});
+}
+void connectToCompanion();
 
 function setMediaState({ paused } = {}) {
   if (paused) { video.pause(); optionalBgm.pause(); fallbackAudio?.suspend(); adapter.pause?.(); }

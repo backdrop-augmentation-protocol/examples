@@ -6,7 +6,7 @@
 
 - `component/`：支持 Standalone/Embedded 的旧版时钟组件示例。
 - `host/`：最小 Host 与 Companion mock 浏览器示例。
-- `host-wallpaper/`：使用官方 Host SDK 的真实 WE 主壁纸，包含循环视频、可选 BGM、WE 回调、暂停/恢复和 iframe 组件故障隔离。
+- `host-wallpaper/`：使用官方 Host SDK 的真实 WE 主壁纸，包含循环视频、可选 BGM、WE 回调、暂停/恢复，以及通过独立 Companion 发现的组件。
 - `time-widget/`：使用官方 Component SDK 的双模式时间/日期组件。
 - `assets/ASSET-PROVENANCE.md`：开放许可素材、来源和 SHA-256 记录。
 
@@ -31,9 +31,12 @@ npm run serve
 
 ## 隐藏 Workshop 测试项目
 
-`npm run build` 会生成两个自包含的 Wallpaper Engine 项目目录：
+`npm run build` 会生成两个相互独立的 Wallpaper Engine 项目目录：
 `dist/workshop-host-wallpaper/` 和 `dist/workshop-time-widget/`。两者分别包含
-`project.json`、所需 SDK 和媒体资源，可作为两个隐藏 Workshop 项目发布。
-启动 Companion 时设置 `BAP_DISCOVER_STEAM_WORKSHOP=1`；若 Steam 不在默认安装位置，
-还需将 `BAP_STEAM_ROOT` 设置为 Steam 安装目录。主壁纸通过 Companion 加载已订阅组件；
-Companion 不可用时会回退到包内组件。
+`project.json`、所需 SDK 和媒体资源。宿主包不再内置组件或 Companion 服务，
+只保留连接独立 Windows Companion 的轻量客户端。Companion 不可用时，视频壁纸仍可运行，
+但不会挂载组件。
+
+本地联调时，启动 Companion 前将 `BAP_WORKSHOP_ROOTS` 指向独立的时间组件项目目录。
+如需发现已订阅的 Workshop 组件，可设置 `BAP_DISCOVER_STEAM_WORKSHOP=1`；若 Steam 不在默认安装位置，
+还需设置 `BAP_STEAM_ROOT`。Wallpaper Engine 壁纸的 Workshop 发布或更新一律通过官方 WE 编辑器。

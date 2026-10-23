@@ -6,8 +6,8 @@ This repository contains a browser-runnable BAP MVP integration example:
 
 - `component/` is a clock/status component with Standalone and Embedded modes.
 - `host/` is a minimal host that embeds the component in an iframe.
-- `host-wallpaper/` is a real Wallpaper Engine Web wallpaper using Host SDK,
-  looping video, optional BGM, WE callbacks, and an isolated iframe component.
+- `host-wallpaper/` is a Wallpaper Engine Web wallpaper using Host SDK,
+  looping video, optional BGM, WE callbacks, and a Companion-discovered component.
 - `time-widget/` is a real dual-mode component wallpaper using Component SDK.
 - `assets/ASSET-PROVENANCE.md` records the open-license demo media and hashes.
 - `companion/` is a local HTTP mock for configuration and component discovery.
@@ -16,9 +16,8 @@ This repository contains a browser-runnable BAP MVP integration example:
 - `shared/protocol.js` is only a transport adapter and Core Profile envelope
   helper; it is not a second protocol definition.
 
-The example demonstrates the MVP choices from `internal-docs`: iframe +
-`postMessage`, request/response plus events, configuration, lifecycle,
-pause/resume, and Companion configuration persistence. The build copies the
+The examples demonstrate iframe + `postMessage`, request/response plus events,
+configuration, lifecycle, and pause/resume. The build copies the
 published files from the sibling official SDK repositories into `dist/sdk/`;
 the example does not reimplement their runtime behavior.
 
@@ -58,10 +57,15 @@ GET /api/config             -> persisted configuration
 
 ## Hidden Workshop test items
 
-`npm run build` creates two self-contained Wallpaper Engine project folders:
+`npm run build` creates two separate Wallpaper Engine project folders:
 `dist/workshop-host-wallpaper/` and `dist/workshop-time-widget/`. Each contains
-its own `project.json`, SDK, and media assets. Publish them as separate hidden
-Workshop items. Start Companion with `BAP_DISCOVER_STEAM_WORKSHOP=1` and, when
-Steam is installed outside its default location, set `BAP_STEAM_ROOT` to the
-Steam installation directory. The Host loads the subscribed component through
-Companion and falls back to its bundled copy when Companion is unavailable.
+its own `project.json`, required SDK, and media assets. The host package does
+not bundle the component or Companion service; it only contains a small client
+that connects to the separately running Windows Companion. Without Companion,
+the video wallpaper remains available but no widget is mounted.
+
+For local integration, start Companion with `BAP_WORKSHOP_ROOTS` pointing to
+the independent time-widget project directory. For subscribed Workshop
+components, use `BAP_DISCOVER_STEAM_WORKSHOP=1` and set `BAP_STEAM_ROOT` when
+Steam is installed outside its default location. Any Workshop publication or
+update of Wallpaper Engine wallpapers must use the official WE editor.

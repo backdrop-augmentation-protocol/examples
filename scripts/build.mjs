@@ -45,13 +45,8 @@ for (const file of ['index.html', 'main.js', 'project.json', 'preview.gif']) {
   await copyFile(resolve(root, 'host-wallpaper', file), resolve(hostPackage, file));
 }
 await cp(resolve(root, '..', 'host-sdk', 'dist'), resolve(hostPackage, 'sdk', 'host-sdk'), { recursive: true });
-await cp(resolve(root, '..', 'component-sdk', 'src'), resolve(hostPackage, 'sdk', 'component-sdk'), { recursive: true });
 await copyFile(resolve(root, 'companion', 'client.js'), resolve(hostPackage, 'companion', 'client.js'));
-for (const file of ['index.html', 'embedded.html', 'main.js']) {
-  await copyFile(resolve(root, 'time-widget', file), resolve(hostPackage, 'time-widget', file));
-}
 await copyFile(resolve(root, 'assets', 'host-wallpaper', 'flower.webm'), resolve(hostPackage, 'assets', 'host-wallpaper', 'flower.webm'));
-await copyFile(resolve(root, 'assets', 'time-widget', 'river-sunset.jpg'), resolve(hostPackage, 'assets', 'time-widget', 'river-sunset.jpg'));
 try {
   await stat(resolve(root, 'assets', 'host-wallpaper', 'bgm.ogg'));
   await copyFile(resolve(root, 'assets', 'host-wallpaper', 'bgm.ogg'), resolve(hostPackage, 'assets', 'host-wallpaper', 'bgm.ogg'));
@@ -61,7 +56,6 @@ try {
 await replaceIn(resolve(hostPackage, 'main.js'), [
   ["'../sdk/", "'./sdk/"],
   ["'../companion/", "'./companion/"],
-  ["'../time-widget/", "'./time-widget/"],
   ["'../assets/", "'./assets/"],
 ]);
 await validateWorkshopPackage(widgetPackage);
