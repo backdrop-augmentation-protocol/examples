@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "version": 2,
+  "type": "web",
+  "file": "index.html",
+  "visibility": "private",
+  "contentrating": "Everyone",
+  "ratingsex": "none",
+  "ratingviolence": "none",
+  "allowedTags": ["Nature", "Landscape", "Clock"],
+  "projects": {
+    "BAP Host Wallpaper Demo": {
+      "preview": "preview.gif",
+      "requiredTags": ["Nature"]
+    },
+    "BAP Time Widget Demo": {
+      "preview": "preview.jpg",
+      "requiredTags": ["Nature", "Clock"]
+    }
+  }
+}

@@ -15,11 +15,9 @@
   "preview": "preview.jpg",
   "ratingsex": "none",
   "ratingviolence": "none",
-  "snapshotformat": -1,
-  "snapshotoverlay": "",
-  "tags": ["web"],
+  "tags": ["Nature", "Clock"],
   "title": "BAP Time Widget Demo",
   "type": "web",
-  "version": 3,
+  "version": 2,
   "visibility": "private"
 }

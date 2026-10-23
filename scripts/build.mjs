@@ -1,9 +1,12 @@
 import { cp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateWorkshopPackage } from './validate-workshop-package.mjs';
+import { validateProjectMetadata, validateWorkshopPackage } from './validate-workshop-package.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+for (const directory of ['host-wallpaper', 'time-widget']) {
+  validateProjectMetadata(JSON.parse(await readFile(resolve(root, directory, 'project.json'), 'utf8')));
+}
 const dist = resolve(root, 'dist');
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });

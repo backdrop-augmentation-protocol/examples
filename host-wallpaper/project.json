@@ -32,11 +32,9 @@
   "preview": "preview.gif",
   "ratingsex": "none",
   "ratingviolence": "none",
-  "snapshotformat": 0,
-  "snapshotoverlay": "",
-  "tags": ["web"],
+  "tags": ["Nature"],
   "title": "BAP Host Wallpaper Demo",
   "type": "web",
-  "version": 3,
+  "version": 2,
   "visibility": "private"
 }

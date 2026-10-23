@@ -3,6 +3,8 @@ import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node
 import { fileURLToPath } from 'node:url';
 
 const previewLimit = 1024 * 1024;
+const metadataPolicy = JSON.parse(await readFile(new URL('../workshop-metadata-policy.json', import.meta.url), 'utf8'));
+const metadataKeys = ['contentrating', 'description', 'file', 'general', 'preview', 'ratingsex', 'ratingviolence', 'tags', 'title', 'type', 'version', 'visibility'];
 
 function assert(condition, message) {
   if (!condition) throw new Error(`Invalid Workshop package: ${message}`);
@@ -52,22 +54,31 @@ function validateProperties(project) {
   }
 }
 
+export function validateProjectMetadata(project) {
+  assert(project && typeof project === 'object' && !Array.isArray(project), 'project.json must contain an object');
+  assert(!('workshopid' in project) && !('workshopurl' in project), 'generated packages must not carry published Workshop identity');
+  assert(metadataKeys.length === Object.keys(project).length && metadataKeys.every(key => Object.hasOwn(project, key)), 'project.json keys must match the canonical Web wallpaper template');
+  for (const key of ['version', 'type', 'file', 'visibility', 'contentrating', 'ratingsex', 'ratingviolence']) {
+    assert(project[key] === metadataPolicy[key], `${key} must be ${metadataPolicy[key]}`);
+  }
+  assert(typeof project.title === 'string' && Object.hasOwn(metadataPolicy.projects, project.title), 'title must identify a configured demo');
+  assert(typeof project.description === 'string' && project.description.trim(), 'description must be a nonempty string');
+  const profile = metadataPolicy.projects[project.title];
+  assert(project.preview === profile.preview, `preview must be ${profile.preview}`);
+  assert(Array.isArray(project.tags) && project.tags.length > 0 && project.tags.length <= 3 && new Set(project.tags).size === project.tags.length, 'tags must be a unique nonempty list of at most 3 genres');
+  assert(project.tags.every(tag => metadataPolicy.allowedTags.includes(tag)), 'tags contain an unsupported genre');
+  assert(profile.requiredTags.every(tag => project.tags.includes(tag)), 'tags are missing a required genre');
+  validateProperties(project);
+  return profile;
+}
+
 export async function validateWorkshopPackage(directory) {
   const root = resolve(directory);
   const projectPath = join(root, 'project.json');
   let project;
   try { project = JSON.parse(await readFile(projectPath, 'utf8')); }
   catch (error) { throw new Error(`Invalid Workshop package: cannot parse ${projectPath}: ${error.message}`); }
-  assert(project && typeof project === 'object' && !Array.isArray(project), 'project.json must contain an object');
-  assert(project.type === 'web', 'type must be web');
-  assert(Number.isInteger(project.version) && project.version >= 2, 'version must be an integer >= 2');
-  for (const key of ['title', 'description', 'contentrating', 'ratingsex', 'ratingviolence']) {
-    assert(typeof project[key] === 'string' && project[key].trim(), `${key} must be a nonempty string`);
-  }
-  assert(project.visibility === 'private', 'test package visibility must be private');
-  assert(Array.isArray(project.tags) && project.tags.every(tag => typeof tag === 'string' && tag.length > 0), 'tags must be strings');
-  assert(!('workshopid' in project) && !('workshopurl' in project), 'generated packages must not carry published Workshop identity');
-  validateProperties(project);
+  validateProjectMetadata(project);
   await existingFile(root, root, project.file, 'file');
   const preview = await existingFile(root, root, project.preview, 'preview');
   assert(preview.info.size <= previewLimit, 'preview exceeds 1 MiB');

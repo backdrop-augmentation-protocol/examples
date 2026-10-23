@@ -7,8 +7,8 @@ import { validateWorkshopPackage } from '../scripts/validate-workshop-package.mj
 
 const base = {
   type: 'web', version: 2, file: 'index.html', preview: 'preview.jpg',
-  title: 'Example', description: 'Local test', contentrating: 'Everyone',
-  ratingsex: 'none', ratingviolence: 'none', visibility: 'private', tags: ['web'],
+  title: 'BAP Time Widget Demo', description: 'Local test', contentrating: 'Everyone',
+  ratingsex: 'none', ratingviolence: 'none', visibility: 'private', tags: ['Nature', 'Clock'],
   general: { properties: { mute: { type: 'bool', text: 'Mute', order: 100, value: false } } },
 };
 
@@ -22,14 +22,14 @@ async function fixture(t, project = base) {
   return root;
 }
 
-test('accepts editor-style version 2 metadata with existing resources', async t => {
+test('accepts canonical version 2 metadata with existing resources', async t => {
   const root = await fixture(t);
   assert.equal((await validateWorkshopPackage(root)).files, 4);
 });
 
-test('rejects missing preview', async t => {
+test('rejects a preview name outside the project policy', async t => {
   const root = await fixture(t, { ...base, preview: 'missing.jpg' });
-  await assert.rejects(validateWorkshopPackage(root), /preview is missing/);
+  await assert.rejects(validateWorkshopPackage(root), /preview must be preview.jpg/);
 });
 
 test('rejects nested project.json', async t => {
@@ -50,12 +50,32 @@ test('rejects missing relative resource', async t => {
   await assert.rejects(validateWorkshopPackage(root), /reference in main.js is missing/);
 });
 
-test('rejects paths escaping the package', async t => {
+test('rejects an entry path outside the project policy', async t => {
   const root = await fixture(t, { ...base, file: '../elsewhere.html' });
-  await assert.rejects(validateWorkshopPackage(root), /file escapes the package/);
+  await assert.rejects(validateWorkshopPackage(root), /file must be index.html/);
 });
 
 test('rejects inherited Workshop identity', async t => {
   const root = await fixture(t, { ...base, workshopid: '123' });
   await assert.rejects(validateWorkshopPackage(root), /published Workshop identity/);
+});
+
+test('rejects Web as a genre tag', async t => {
+  const root = await fixture(t, { ...base, tags: ['web'] });
+  await assert.rejects(validateWorkshopPackage(root), /unsupported genre/);
+});
+
+test('rejects a missing project-specific genre', async t => {
+  const root = await fixture(t, { ...base, tags: ['Nature'] });
+  await assert.rejects(validateWorkshopPackage(root), /required genre/);
+});
+
+test('rejects extra editor snapshot metadata', async t => {
+  const root = await fixture(t, { ...base, snapshotformat: -1 });
+  await assert.rejects(validateWorkshopPackage(root), /canonical Web wallpaper template/);
+});
+
+test('rejects a different metadata version', async t => {
+  const root = await fixture(t, { ...base, version: 3 });
+  await assert.rejects(validateWorkshopPackage(root), /version must be 2/);
 });
