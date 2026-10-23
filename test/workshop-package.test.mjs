@@ -87,3 +87,10 @@ test('rejects a host package that bundles the time widget', async t => {
   await writeFile(join(root, 'time-widget', 'embedded.html'), 'bundled widget');
   await assert.rejects(validateWorkshopPackage(root), /must not bundle the time widget/);
 });
+
+test('rejects an embedded entrypoint that still loads a separate script', async t => {
+  const root = await fixture(t);
+  await writeFile(join(root, 'manifest.json'), JSON.stringify({ modes: ['embedded'], entrypoints: { embedded: './embedded.html' } }));
+  await writeFile(join(root, 'embedded.html'), '<script src="./main.js"></script>');
+  await assert.rejects(validateWorkshopPackage(root), /inline script/);
+});

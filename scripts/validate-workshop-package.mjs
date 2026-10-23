@@ -110,6 +110,15 @@ export async function validateWorkshopPackage(directory) {
     for (const [name, entrypoint] of Object.entries(manifest.entrypoints ?? {})) {
       await existingFile(root, root, entrypoint, `manifest.entrypoints.${name}`);
     }
+    if (manifest.modes?.includes('embedded')) {
+      const entry = await existingFile(root, root, manifest.entrypoints?.embedded, 'manifest.entrypoints.embedded');
+      const html = await readFile(entry.target, 'utf8');
+      const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
+      assert(scripts.some(([, attributes, body]) => body.trim() || /\bsrc\s*=\s*["']data:/i.test(attributes)), 'embedded entrypoint must contain an inline script');
+      assert(!/<(?:script|link|img|audio|video|source|iframe)\b[^>]*\b(?:src|href)\s*=\s*["'](?!data:|#)/i.test(html), 'embedded entrypoint must not reference external resources');
+      const css = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map(match => match[1]).join('\n');
+      assert(!/url\(\s*["']?(?!data:|#)[^)]/i.test(css), 'embedded entrypoint CSS must not reference external resources');
+    }
   }
   return { root, files: files.length };
 }
