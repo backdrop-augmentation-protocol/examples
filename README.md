@@ -7,8 +7,10 @@ This repository contains a browser-runnable BAP MVP integration example:
 - `component/` is a clock/status component with Standalone and Embedded modes.
 - `host/` is a minimal host that embeds the component in an iframe.
 - `host-wallpaper/` is a Wallpaper Engine Web wallpaper using Host SDK,
-  looping video, optional BGM, WE callbacks, and a Companion-discovered component.
+  looping video, optional BGM, WE callbacks, and independently discovered components.
 - `time-widget/` is a real dual-mode component wallpaper using Component SDK.
+- `calendar-widget/` is a distinct dual-mode calendar component for local
+  multi-component integration tests; it is not a Workshop upload project.
 - `assets/ASSET-PROVENANCE.md` records the open-license demo media and hashes.
 - `companion/` is a local HTTP mock for configuration and component discovery.
 - `host/` uses the official `host-sdk` `HostRuntime` to mount the iframe.
@@ -35,7 +37,8 @@ load and save the component configuration. Open `/component/` directly to see
 Standalone Mode.
 
 The real wallpaper demos are available at `/host-wallpaper/` and
-`/time-widget/`. Copy each built directory to a temporary Wallpaper Engine Web
+`/time-widget/`; the calendar can also run standalone at `/calendar-widget/`.
+Copy each Workshop project folder to a temporary Wallpaper Engine Web
 wallpaper project, or open them in the browser for a precheck. The host uses
 the checked-in MDN flower video. An optional `bgm.ogg` can be placed under
 `assets/host-wallpaper/`; without it, a tiny Web Audio fallback tone keeps
@@ -60,9 +63,11 @@ GET /api/config             -> persisted configuration
 `npm run build` creates two separate Wallpaper Engine project folders:
 `dist/workshop-host-wallpaper/` and `dist/workshop-time-widget/`. Each contains
 its own `project.json`, required SDK, and media assets. The host package does
-not bundle the component or Companion service; it only contains a small client
+not bundle components or the Companion service; it only contains a small client
 that connects to the separately running Windows Companion. Without Companion,
-the video wallpaper remains available but no widget is mounted.
+the video wallpaper remains available but no widget is mounted. The separate
+`dist/local-calendar-widget/` package has a distinct component ID and no
+`project.json`; it is only for local multi-component testing.
 
 The component package's `embedded.html` is built as a self-contained document.
 The Host retrieves it through the Companion's authenticated resource endpoint
@@ -70,8 +75,9 @@ and mounts it with the Host SDK's isolated `srcdoc` mode. Component files are
 not copied into the selected Host wallpaper project, and no additional WE item
 is created. The standalone entrypoint keeps its own package resources.
 
-For local integration, start Companion with `BAP_WORKSHOP_ROOTS` pointing to
-the independent time-widget project directory. For subscribed Workshop
-components, use `BAP_DISCOVER_STEAM_WORKSHOP=1` and set `BAP_STEAM_ROOT` when
-Steam is installed outside its default location. Any Workshop publication or
-update of Wallpaper Engine wallpapers must use the official WE editor.
+For a local two-component test, start Companion with `BAP_WORKSHOP_ROOTS`
+pointing to `dist/local-calendar-widget/` and
+`BAP_DISCOVER_STEAM_WORKSHOP=1` to include the subscribed time widget. Without
+an explicit root, Companion discovers installed Workshop components by default.
+Any Workshop publication or update of Wallpaper Engine wallpapers must use the
+official WE editor.
