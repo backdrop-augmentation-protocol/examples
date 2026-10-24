@@ -19,6 +19,7 @@ export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clie
     hello,
     socket,
     listComponents() { return readJson('/v1/components', 'Companion component discovery failed'); },
+    listEffectiveComponents(hostId) { return readJson(`/v1/hosts/${encodeURIComponent(hostId)}/components`, 'Companion preset read failed'); },
     getComponentManifest(id) { return readJson(`/v1/components/${encodeURIComponent(id)}/manifest`, 'Companion manifest read failed'); },
     async getComponentLaunchUrl(id) {
       const response = await authFetch(`/v1/components/${encodeURIComponent(id)}/launch`, { method: 'POST' });
@@ -26,6 +27,7 @@ export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clie
       return (await response.json()).url;
     },
     async fetchComponentResource(id, path) { const response = await authFetch(`/v1/components/${encodeURIComponent(id)}/resources/${path.split('/').map(encodeURIComponent).join('/')}`, { cache: 'no-store' }); if (!response.ok) throw new Error(`Companion resource read failed: HTTP ${response.status}`); return response.blob(); },
+    async fetchCatalogResource(key, path) { const response = await authFetch(`/v1/catalog/components/${encodeURIComponent(key)}/resources/${path.replace(/^\.\//, '').split('/').map(encodeURIComponent).join('/')}`, { cache: 'no-store' }); if (!response.ok) throw new Error(`Companion catalog resource read failed: HTTP ${response.status}`); return response.blob(); },
     async loadConfig() { return readJson('/v1/config', 'Companion config read failed'); },
     async saveWallpaperConfig(id, values) { const response = await authFetch(`/v1/config/wallpapers/${encodeURIComponent(id)}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(values) }); if (!response.ok) throw new Error(`Companion config write failed: HTTP ${response.status}`); },
     close() { socket.close(); }

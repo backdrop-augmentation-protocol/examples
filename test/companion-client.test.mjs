@@ -24,10 +24,11 @@ test('reads embedded resources without using the HTTP cache', async t => {
     close() {}
   };
   const companion = await connectCompanion();
-  const resource = await companion.fetchComponentResource('org.example.clock', 'embedded.html');
+  const resource = await companion.fetchCatalogResource('workshop:123', './embedded.html');
   assert.equal(await resource.text(), '<p>clock</p>');
   const fetchRequest = requests.find(item => item.url.includes('/resources/'));
   assert.equal(fetchRequest.options.cache, 'no-store');
   assert.equal(fetchRequest.options.headers.authorization, 'Bearer test-token');
+  assert.match(fetchRequest.url, /workshop%3A123\/resources\/embedded\.html$/);
   companion.close();
 });
