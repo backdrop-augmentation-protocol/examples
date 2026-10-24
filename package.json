@@ -5,7 +5,8 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "validate:workshop": "node scripts/validate-workshop-package.mjs dist/workshop-host-wallpaper dist/workshop-time-widget dist/workshop-calendar-widget",
-    "test": "npm run build && node --test test/*.test.mjs && npm run validate:workshop",
+    "validate:distribution": "node scripts/validate-distribution.mjs",
+    "test": "npm run build && node --test test/*.test.mjs && npm run validate:workshop && npm run validate:distribution",
     "serve": "node scripts/serve.mjs"
   },
   "devDependencies": {

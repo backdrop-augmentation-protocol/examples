@@ -73,6 +73,11 @@ the video wallpaper remains available but no widget is mounted. The separate
 preview, and the landscape asset for official-editor publication. Building or
 copying this package does not publish it online.
 
+Before an official-editor Workshop publication or update, run `npm test`.
+It applies both the example-specific metadata policy and the shared BAP WE
+Web/Workshop distribution checks to all three generated packages. Local-only
+development can use `npm run build` without this extra distribution preflight.
+
 The component package's `embedded.html` is built as a self-contained document.
 The Host retrieves it through the Companion's authenticated resource endpoint
 and mounts it with the Host SDK's isolated `srcdoc` mode. Component files are
