@@ -14,7 +14,6 @@ await mkdir(dist, { recursive: true });
 for (const directory of ['component', 'host', 'shared', 'companion', 'host-wallpaper', 'time-widget', 'calendar-widget', 'assets']) {
   await cp(resolve(root, directory), resolve(dist, directory), { recursive: true });
 }
-await copyCalendarLandscape(resolve(dist, 'assets', 'calendar-widget', 'river-sunset.jpg'));
 await mkdir(resolve(dist, 'sdk', 'host-sdk'), { recursive: true });
 await cp(resolve(root, '..', 'host-sdk', 'dist'), resolve(dist, 'sdk', 'host-sdk'), { recursive: true });
 await mkdir(resolve(dist, 'sdk', 'component-sdk'), { recursive: true });
@@ -32,7 +31,7 @@ async function copyFile(source, destination) {
 }
 
 async function copyCalendarLandscape(destination) {
-  await copyFile(resolve(root, 'assets', 'time-widget', 'river-sunset.jpg'), destination);
+  await copyFile(resolve(root, 'assets', 'calendar-widget', 'lake-mountain.jpg'), destination);
 }
 
 const widgetPackage = resolve(dist, 'workshop-time-widget');
@@ -57,7 +56,7 @@ for (const file of ['index.html', 'embedded.html', 'main.js', 'manifest.json']) 
   await copyFile(resolve(root, 'calendar-widget', file), resolve(calendarPackage, file));
 }
 await cp(resolve(root, '..', 'component-sdk', 'src'), resolve(calendarPackage, 'sdk', 'component-sdk'), { recursive: true });
-await copyCalendarLandscape(resolve(calendarPackage, 'assets', 'calendar-widget', 'river-sunset.jpg'));
+await copyCalendarLandscape(resolve(calendarPackage, 'assets', 'calendar-widget', 'lake-mountain.jpg'));
 await replaceIn(resolve(calendarPackage, 'main.js'), [["'../sdk/", "'./sdk/"]]);
 await replaceIn(resolve(calendarPackage, 'index.html'), [["../assets/", "./assets/"]]);
 await writeFile(resolve(calendarPackage, 'embedded.html'), await buildInlineEmbedded(

@@ -35,7 +35,7 @@ test('local calendar exposes the same collapsible grid in both modes', async () 
   assert.match(embedded, /grid\.hidden\s*=/);
   const host = await readFile(new URL('../dist/workshop-host-wallpaper/index.html', import.meta.url), 'utf8');
   assert.match(host, /#component-calendar iframe\{pointer-events:auto\}/);
-  assert.match(standalone, /\.\/assets\/calendar-widget\/river-sunset\.jpg/);
+  assert.match(standalone, /\.\/assets\/calendar-widget\/lake-mountain\.jpg/);
   const workshopStandalone = await readFile(new URL('../dist/workshop-calendar-widget/index.html', import.meta.url), 'utf8');
-  assert.match(workshopStandalone, /\.\/assets\/calendar-widget\/river-sunset\.jpg/);
+  assert.match(workshopStandalone, /\.\/assets\/calendar-widget\/lake-mountain\.jpg/);
 });

@@ -1,7 +1,7 @@
 Add-Type -AssemblyName System.Drawing
 
 $destination = Join-Path $PSScriptRoot '..\calendar-widget\preview.png'
-$landscapePath = Join-Path $PSScriptRoot '..\assets\time-widget\river-sunset.jpg'
+$landscapePath = Join-Path $PSScriptRoot '..\assets\calendar-widget\lake-mountain.jpg'
 $bitmap = [System.Drawing.Bitmap]::new(640, 360)
 $landscape = [System.Drawing.Image]::FromFile($landscapePath)
 $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
@@ -19,18 +19,18 @@ try {
   $cropHeight = [int]($landscape.Width * 360 / 640)
   $cropY = [int](($landscape.Height - $cropHeight) / 2)
   $graphics.DrawImage($landscape, [System.Drawing.Rectangle]::new(0, 0, 640, 360), [System.Drawing.Rectangle]::new(0, $cropY, $landscape.Width, $cropHeight), [System.Drawing.GraphicsUnit]::Pixel)
-  $graphics.FillRectangle($card, 82, 22, 476, 316)
-  $graphics.DrawString('BAP CALENDAR', $labelFont, $muted, 110, 46)
-  $graphics.DrawString('Calendar', $titleFont, $white, 108, 84)
+  $graphics.FillRectangle($card, 245, 22, 380, 316)
+  $graphics.DrawString('BAP CALENDAR', $labelFont, $muted, 268, 46)
+  $graphics.DrawString('Calendar', $titleFont, $white, 266, 84)
   $weekdays = @('M', 'T', 'W', 'T', 'F', 'S', 'S')
   for ($column = 0; $column -lt 7; $column++) {
-    $x = 132 + 57 * $column
+    $x = 283 + 47 * $column
     $graphics.DrawString($weekdays[$column], $dayFont, $muted, $x, 146)
   }
   for ($index = 0; $index -lt 35; $index++) {
     $column = $index % 7
     $row = [Math]::Floor($index / 7)
-    $x = 127 + 57 * $column
+    $x = 278 + 47 * $column
     $y = 177 + 29 * $row
     $number = $index - 1
     if ($number -ge 1 -and $number -le 31) {
