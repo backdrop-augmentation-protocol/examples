@@ -32,3 +32,16 @@ test('built Workshop widget has a self-contained embedded entrypoint', async () 
   assert.ok(script);
   assert.doesNotThrow(() => new vm.Script(script));
 });
+
+test('local calendar component has a separate identity and self-contained entrypoint', async () => {
+  const root = new URL('../dist/local-calendar-widget/', import.meta.url);
+  const manifest = JSON.parse(await readFile(new URL('manifest.json', root), 'utf8'));
+  assert.equal(manifest.id, 'org.bap.examples.calendar-widget');
+  assert.notEqual(manifest.id, 'org.bap.examples.time-widget');
+  const html = await readFile(new URL('embedded.html', root), 'utf8');
+  assert.match(html, /BAP CALENDAR/);
+  assert.doesNotMatch(html, /<script[^>]+src=/);
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(script);
+  assert.doesNotThrow(() => new vm.Script(script));
+});

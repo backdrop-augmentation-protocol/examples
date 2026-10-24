@@ -11,7 +11,7 @@ for (const directory of ['host-wallpaper', 'time-widget']) {
 const dist = resolve(root, 'dist');
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
-for (const directory of ['component', 'host', 'shared', 'companion', 'host-wallpaper', 'time-widget', 'assets']) {
+for (const directory of ['component', 'host', 'shared', 'companion', 'host-wallpaper', 'time-widget', 'calendar-widget', 'assets']) {
   await cp(resolve(root, directory), resolve(dist, directory), { recursive: true });
 }
 await mkdir(resolve(dist, 'sdk', 'host-sdk'), { recursive: true });
@@ -42,6 +42,20 @@ await replaceIn(resolve(widgetPackage, 'index.html'), [["../assets/", "./assets/
 await writeFile(resolve(widgetPackage, 'embedded.html'), await buildInlineEmbedded(
   await readFile(resolve(root, 'time-widget', 'embedded.html'), 'utf8'),
   resolve(widgetPackage, 'main.js'),
+));
+
+// A local-only second component for multi-component Host testing. It is not a
+// Workshop upload package and deliberately has no project.json or preview.
+const calendarPackage = resolve(dist, 'local-calendar-widget');
+await mkdir(calendarPackage, { recursive: true });
+for (const file of ['index.html', 'embedded.html', 'main.js', 'manifest.json']) {
+  await copyFile(resolve(root, 'calendar-widget', file), resolve(calendarPackage, file));
+}
+await cp(resolve(root, '..', 'component-sdk', 'src'), resolve(calendarPackage, 'sdk', 'component-sdk'), { recursive: true });
+await replaceIn(resolve(calendarPackage, 'main.js'), [["'../sdk/", "'./sdk/"]]);
+await writeFile(resolve(calendarPackage, 'embedded.html'), await buildInlineEmbedded(
+  await readFile(resolve(root, 'calendar-widget', 'embedded.html'), 'utf8'),
+  resolve(calendarPackage, 'main.js'),
 ));
 
 const hostPackage = resolve(dist, 'workshop-host-wallpaper');
