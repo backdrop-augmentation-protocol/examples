@@ -5,7 +5,7 @@ import { validateProjectMetadata, validateWorkshopPackage } from './validate-wor
 import { buildInlineEmbedded } from './build-inline-embedded.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-for (const directory of ['host-wallpaper', 'time-widget']) {
+for (const directory of ['host-wallpaper', 'time-widget', 'calendar-widget']) {
   validateProjectMetadata(JSON.parse(await readFile(resolve(root, directory, 'project.json'), 'utf8')));
 }
 const dist = resolve(root, 'dist');
@@ -58,6 +58,14 @@ await writeFile(resolve(calendarPackage, 'embedded.html'), await buildInlineEmbe
   resolve(calendarPackage, 'main.js'),
 ));
 
+// One explicitly named local WE item for checking the calendar's Standalone Mode.
+// Companion still reads the metadata-free local-calendar-widget package above.
+const localWeCalendar = resolve(dist, 'we-local-calendar-widget');
+await cp(calendarPackage, localWeCalendar, { recursive: true });
+for (const file of ['project.json', 'preview.png']) {
+  await copyFile(resolve(root, 'calendar-widget', file), resolve(localWeCalendar, file));
+}
+
 const hostPackage = resolve(dist, 'workshop-host-wallpaper');
 await mkdir(hostPackage, { recursive: true });
 for (const file of ['index.html', 'main.js', 'project.json', 'preview.gif']) {
@@ -79,4 +87,5 @@ await replaceIn(resolve(hostPackage, 'main.js'), [
 ]);
 await validateWorkshopPackage(widgetPackage);
 await validateWorkshopPackage(hostPackage);
+await validateWorkshopPackage(localWeCalendar);
 console.log(`Built ${dist}`);

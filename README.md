@@ -67,7 +67,10 @@ not bundle components or the Companion service; it only contains a small client
 that connects to the separately running Windows Companion. Without Companion,
 the video wallpaper remains available but no widget is mounted. The separate
 `dist/local-calendar-widget/` package has a distinct component ID and no
-`project.json`; it is only for local multi-component testing.
+`project.json`; it is only for local multi-component testing. The separate
+`dist/we-local-calendar-widget/` package adds valid WE metadata and a distinct
+preview so its Standalone Mode appears as one local WE editor item. It is not
+an online Workshop item.
 
 The component package's `embedded.html` is built as a self-contained document.
 The Host retrieves it through the Companion's authenticated resource endpoint

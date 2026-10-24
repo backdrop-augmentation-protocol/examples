@@ -15,6 +15,12 @@ test('Host demo offers separate slots for both independently discovered componen
   const localFiles = await readdir(new URL('../dist/local-calendar-widget/', import.meta.url));
   assert.ok(localFiles.includes('manifest.json'));
   assert.ok(!localFiles.includes('project.json'));
+  const weFiles = await readdir(new URL('../dist/we-local-calendar-widget/', import.meta.url));
+  assert.ok(weFiles.includes('project.json'));
+  assert.ok(weFiles.includes('preview.png'));
+  const weProject = JSON.parse(await readFile(new URL('../dist/we-local-calendar-widget/project.json', import.meta.url), 'utf8'));
+  assert.equal(weProject.title, 'BAP Calendar Widget Local Test');
+  assert.ok(!Object.hasOwn(weProject, 'workshopid'));
 });
 
 test('local calendar exposes the same collapsible grid in both modes', async () => {

@@ -16,6 +16,10 @@
     "BAP Time Widget Demo": {
       "preview": "preview.jpg",
       "requiredTags": ["Nature", "Clock"]
+    },
+    "BAP Calendar Widget Local Test": {
+      "preview": "preview.png",
+      "requiredTags": ["Clock"]
     }
   }
 }

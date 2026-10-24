@@ -40,7 +40,9 @@ npm run serve
 但不会挂载组件。
 
 `dist/local-calendar-widget/` 是独立的本地组件包，具有不同的组件 ID，且不含
-`project.json`；它仅用于本地双组件测试。
+`project.json`；它仅用于本地双组件测试。另有 `dist/we-local-calendar-widget/`
+包含有效的 WE 元数据和独立预览图，使独立模式作为一个本地编辑项目出现在 WE 中；
+它不是线上 Workshop item。
 
 组件包的 `embedded.html` 在构建时生成自包含文档。宿主通过 Companion 的鉴权
 资源接口读取该文档，再使用 Host SDK 的隔离 `srcdoc` 模式挂载。组件文件不会
