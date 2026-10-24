@@ -9,6 +9,15 @@ const runtime = new ComponentRuntime({ manifest, mode: embedded ? 'embedded' : '
 const month = document.querySelector('#month');
 const year = document.querySelector('#year');
 const grid = document.querySelector('#grid');
+const toggle = document.querySelector('#toggle-calendar');
+
+toggle.addEventListener('click', () => {
+  const expanded = toggle.getAttribute('aria-expanded') !== 'true';
+  toggle.setAttribute('aria-expanded', String(expanded));
+  toggle.setAttribute('aria-label', expanded ? 'Collapse calendar' : 'Expand calendar');
+  toggle.textContent = expanded ? 'Collapse' : 'Expand';
+  grid.hidden = !expanded;
+});
 
 if (embedded) window.addEventListener('message', (event) => {
   if (event.source !== window.parent) return;

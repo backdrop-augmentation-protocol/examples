@@ -16,3 +16,17 @@ test('Host demo offers separate slots for both independently discovered componen
   assert.ok(localFiles.includes('manifest.json'));
   assert.ok(!localFiles.includes('project.json'));
 });
+
+test('local calendar exposes the same collapsible grid in both modes', async () => {
+  const standalone = await readFile(new URL('../dist/local-calendar-widget/index.html', import.meta.url), 'utf8');
+  const embedded = await readFile(new URL('../dist/local-calendar-widget/embedded.html', import.meta.url), 'utf8');
+  for (const html of [standalone, embedded]) {
+    assert.match(html, /id="toggle-calendar"/);
+    assert.match(html, /aria-controls="grid" aria-expanded="true"/);
+    assert.match(html, /\.grid\[hidden\]\{display:none\}/);
+  }
+  assert.match(embedded, /Expand calendar/);
+  assert.match(embedded, /grid\.hidden\s*=/);
+  const host = await readFile(new URL('../dist/workshop-host-wallpaper/index.html', import.meta.url), 'utf8');
+  assert.match(host, /#component-calendar iframe\{pointer-events:auto\}/);
+});
