@@ -84,9 +84,12 @@ and mounts it with the Host SDK's isolated `srcdoc` mode. Component files are
 not copied into the selected Host wallpaper project, and no additional WE item
 is created. The standalone entrypoint keeps its own package resources.
 
-For a local two-component test, start Companion with `BAP_WORKSHOP_ROOTS`
-pointing to `dist/local-calendar-widget/` and
-`BAP_DISCOVER_STEAM_WORKSHOP=1` to include the subscribed time widget. Without
-an explicit root, Companion discovers installed Workshop components by default.
+For a local two-component test, start Companion with `BAP_LOCAL_ROOTS`
+pointing to `dist/local-calendar-widget/`; subscribed components are discovered
+alongside it. The Host uses the active Companion preset, can add or remove
+components without an embedded copy, and auto-arranges them in preset order.
+The generated Host package now carries a Host Manifest; an older subscribed
+demo without that file remains recognizable through the Companion's legacy
+example mapping until it is updated through the editor.
 Any Workshop publication or update of Wallpaper Engine wallpapers must use the
 official WE editor.

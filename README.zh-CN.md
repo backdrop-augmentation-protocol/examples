@@ -54,7 +54,8 @@ npm run serve
 复制进当前选中的宿主壁纸项目，也不会额外生成 WE item；独立模式入口仍使用
 组件包内的资源。
 
-本地双组件联调时，启动 Companion 前将 `BAP_WORKSHOP_ROOTS` 指向
-`dist/local-calendar-widget/`，同时设置 `BAP_DISCOVER_STEAM_WORKSHOP=1`
-以包含已订阅的时间挂件。未指定显式目录时，Companion 默认自动发现已安装的 Workshop 组件。
+本地双组件联调时，启动 Companion 前将 `BAP_LOCAL_ROOTS` 指向
+`dist/local-calendar-widget/`；已订阅组件会同时自动发现。宿主按当前 Companion
+预设增减组件，并按预设顺序自动布局，不打包组件副本。新生成的宿主包带有 Host
+Manifest；尚未通过编辑器更新的旧订阅示例由 Companion 的过渡映射识别。
 Wallpaper Engine 壁纸的 Workshop 发布或更新一律通过官方 WE 编辑器。
