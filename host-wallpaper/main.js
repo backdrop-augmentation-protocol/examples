@@ -2,11 +2,20 @@ import { HostRuntime, WallpaperEngineHost } from '../sdk/host-sdk/index.js';
 import { connectCompanion } from '../companion/client.js';
 
 const video = document.querySelector('#video');
-const frameContainer = document.querySelector('#component');
 const volume = document.querySelector('#volume');
 const toggle = document.querySelector('#toggle');
 const companionStatus = document.querySelector('#companion-status');
-const componentId = 'org.bap.examples.time-widget';
+const componentDefinitions = [
+  { id: 'org.bap.examples.time-widget', label: 'Time', container: document.querySelector('#component-time') },
+  { id: 'org.bap.examples.calendar-widget', label: 'Calendar', container: document.querySelector('#component-calendar') },
+];
+const componentStates = new Map(componentDefinitions.map(({ id }) => [id, 'waiting']));
+let companionState = 'connecting';
+function showStatus() {
+  const states = componentDefinitions.map(({ id, label }) => `${label}: ${componentStates.get(id)}`).join('; ');
+  companionStatus.textContent = `Companion: ${companionState}; ${states}`;
+}
+function setComponentState(id, state) { componentStates.set(id, state); showStatus(); }
 const VIDEO = '../assets/host-wallpaper/flower.webm';
 const optionalBgm = new Audio('../assets/host-wallpaper/bgm.ogg');
 optionalBgm.loop = true;
@@ -25,22 +34,26 @@ const host = new HostRuntime({
   implementationVersion: '0.1.0',
   capabilities: ['lifecycle', 'size', 'pause-resume', 'config'],
 });
-let component;
-function mountComponent(srcdoc) {
-  component = host.mount({
-    id: componentId,
+const mountedComponents = new Map();
+function mountComponent(definition, srcdoc) {
+  const { id, container } = definition;
+  const component = host.mount({
+    id,
     srcdoc,
-    container: frameContainer,
-    size: { width: frameContainer.clientWidth, height: frameContainer.clientHeight },
+    container,
+    size: { width: container.clientWidth, height: container.clientHeight },
   });
-  component.on('ready', () => { companionStatus.textContent = 'Companion: connected; widget: running'; });
-  component.on('fault', (fault) => { companionStatus.textContent = 'Companion: connected; widget: unavailable'; console.warn('BAP component unavailable; host continues', JSON.stringify(fault)); });
+  mountedComponents.set(id, component);
+  component.on('ready', () => setComponentState(id, 'running'));
+  component.on('fault', (fault) => { setComponentState(id, 'unavailable'); console.warn(`BAP component ${id} unavailable; host continues`, JSON.stringify(fault)); });
+  component.on('stopped', () => { if (mountedComponents.get(id) === component) mountedComponents.delete(id); });
 }
 // The current SDKs expose the transport primitives independently. This tiny
 // demo adapter completes the symmetric request/response side of the iframe
 // handshake while the HostRuntime owns mounting, isolation, and lifecycle.
 window.addEventListener('message', (event) => {
-  if (!component || event.source !== component.iframe.contentWindow || !component.acceptsOrigin(event.origin)) return;
+  const component = [...mountedComponents.values()].find((handle) => event.source === handle.iframe.contentWindow && handle.acceptsOrigin(event.origin));
+  if (!component) return;
   const message = event.data;
   if (message?.kind !== 'request' || !message.id) return;
   const result = message.method === 'hello'
@@ -51,35 +64,55 @@ window.addEventListener('message', (event) => {
 });
 
 const adapter = {
-  onSize(listener) { window.addEventListener('resize', () => listener({ width: frameContainer.clientWidth, height: frameContainer.clientHeight })); },
+  // The two slots have different dimensions; resize each handle below.
+  onSize() {},
   onPause(listener) { this.pause = listener; },
   onResume(listener) { this.resume = listener; },
-  currentSize() { return { width: frameContainer.clientWidth, height: frameContainer.clientHeight }; },
 };
 new WallpaperEngineHost(host, adapter);
+window.addEventListener('resize', () => {
+  for (const definition of componentDefinitions) {
+    const handle = mountedComponents.get(definition.id);
+    if (handle) handle.setSize({ width: definition.container.clientWidth, height: definition.container.clientHeight });
+  }
+});
 
 async function connectToCompanion() {
   let companion;
+  let reconnectScheduled = false;
+  function reconnect() {
+    if (reconnectScheduled) return;
+    reconnectScheduled = true;
+    for (const component of mountedComponents.values()) component.stop();
+    companionState = 'offline; reconnecting';
+    for (const definition of componentDefinitions) componentStates.set(definition.id, 'waiting');
+    showStatus();
+    setTimeout(connectToCompanion, 3000);
+  }
   try {
     companion = await connectCompanion();
+    companion.socket.addEventListener('close', reconnect, { once: true });
     const components = await companion.listComponents();
-    companionStatus.textContent = `Companion: connected; discovered: ${components.length}`;
-    if (components.some((item) => item.id === componentId)) {
-      const embedded = await companion.fetchComponentResource(componentId, 'embedded.html');
-      if (embedded.size > 1024 * 1024) throw new Error('Embedded component exceeds the 1 MiB demo limit');
-      mountComponent(await embedded.text());
-    } else {
-      companionStatus.textContent = 'Companion: connected; time widget not discovered';
-    }
-    companion.socket.addEventListener('close', () => {
-      component?.stop();
-      component = undefined;
-      companionStatus.textContent = 'Companion: offline; reconnecting...';
-      setTimeout(connectToCompanion, 3000);
-    }, { once: true });
+    if (reconnectScheduled) return;
+    companionState = 'connected';
+    showStatus();
+    await Promise.all(componentDefinitions.map(async (definition) => {
+      if (!components.some((item) => item.id === definition.id)) { setComponentState(definition.id, 'not installed'); return; }
+      try {
+        const embedded = await companion.fetchComponentResource(definition.id, 'embedded.html');
+        if (embedded.size > 1024 * 1024) throw new Error('Embedded component exceeds the 1 MiB demo limit');
+        const srcdoc = await embedded.text();
+        if (reconnectScheduled) return;
+        mountComponent(definition, srcdoc);
+      } catch (error) {
+        if (reconnectScheduled) return;
+        setComponentState(definition.id, 'unavailable');
+        console.warn(`BAP component ${definition.id} unavailable; host continues`, error);
+      }
+    }));
   } catch (error) {
     companion?.close();
-    companionStatus.textContent = 'Companion: offline; reconnecting...';
+    reconnect();
     console.warn('BAP Companion unavailable', error);
     setTimeout(connectToCompanion, 3000);
   }

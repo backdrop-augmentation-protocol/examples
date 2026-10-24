@@ -90,8 +90,8 @@ export async function validateWorkshopPackage(directory) {
   if (project.title === 'BAP Host Wallpaper Demo') {
     assert(!files.some(file => {
       const path = relative(root, file).replaceAll('\\', '/');
-      return path.startsWith('time-widget/') || path.startsWith('sdk/component-sdk/') || path.startsWith('assets/time-widget/');
-    }), 'host package must not bundle the time widget or Component SDK');
+      return path.startsWith('time-widget/') || path.startsWith('calendar-widget/') || path.startsWith('sdk/component-sdk/') || path.startsWith('assets/time-widget/');
+    }), 'host package must not bundle components or Component SDK');
   }
   for (const file of files) {
     if (!['.html', '.js', '.css'].includes(extname(file))) continue;

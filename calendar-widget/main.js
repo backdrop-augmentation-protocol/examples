@@ -15,10 +15,10 @@ if (embedded) window.addEventListener('message', (event) => {
   const message = event.data;
   if (message?.kind !== 'request' || !message.id) return;
   const result = message.method === 'hello'
-    ? { protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, sessionId: 'calendar-session', capabilities: manifest.capabilities, permissions: [] }
+    ? { protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, sessionId: 'examples-session', capabilities: manifest.capabilities, permissions: [] }
     : { acknowledged: true, method: message.method };
   const responseOrigin = window.location.protocol === 'file:' || window.location.protocol === 'about:' ? '*' : event.origin;
-  event.source.postMessage(createResponse(message, result, { sessionId: 'calendar-session' }), responseOrigin);
+  event.source.postMessage(createResponse(message, result, { sessionId: 'examples-session' }), responseOrigin);
 });
 
 function render() {

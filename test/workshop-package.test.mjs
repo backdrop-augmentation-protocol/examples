@@ -85,7 +85,15 @@ test('rejects a host package that bundles the time widget', async t => {
   await writeFile(join(root, 'preview.gif'), 'preview');
   await mkdir(join(root, 'time-widget'));
   await writeFile(join(root, 'time-widget', 'embedded.html'), 'bundled widget');
-  await assert.rejects(validateWorkshopPackage(root), /must not bundle the time widget/);
+  await assert.rejects(validateWorkshopPackage(root), /must not bundle components/);
+});
+
+test('rejects a host package that bundles the local calendar component', async t => {
+  const root = await fixture(t, { ...base, title: 'BAP Host Wallpaper Demo', preview: 'preview.gif', tags: ['Nature'] });
+  await writeFile(join(root, 'preview.gif'), 'preview');
+  await mkdir(join(root, 'calendar-widget'));
+  await writeFile(join(root, 'calendar-widget', 'embedded.html'), 'bundled widget');
+  await assert.rejects(validateWorkshopPackage(root), /must not bundle components/);
 });
 
 test('rejects an embedded entrypoint that still loads a separate script', async t => {
