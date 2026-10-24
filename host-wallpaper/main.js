@@ -1,5 +1,6 @@
 import { HostRuntime, WallpaperEngineHost } from '../sdk/host-sdk/index.js';
 import { connectCompanion } from '../companion/client.js';
+import { synchronizeComponentOrder } from './layout.js';
 
 const video = document.querySelector('#video');
 const volume = document.querySelector('#volume');
@@ -37,6 +38,7 @@ function mountComponent(definition, srcdoc) {
   const { componentId: id, sourceKey } = definition;
   const container = document.createElement('div');
   container.className = 'component';
+  container.dataset.componentId = id;
   componentContainer.appendChild(container);
   const component = host.mount({
     id,
@@ -104,6 +106,7 @@ async function connectToCompanion() {
         const next = selected.find(item => item.componentId === id);
         if (!desired.has(id) || next?.sourceKey !== record.sourceKey) host.unmount(id);
       }
+      const orderedContainers = [];
       for (const item of selected) {
         if (item.status !== 'available') { setComponentState(item.componentId, item.status); continue; }
         if (!mountedComponents.has(item.componentId)) {
@@ -120,8 +123,10 @@ async function connectToCompanion() {
           }
         }
         const record = mountedComponents.get(item.componentId);
-        if (record) componentContainer.appendChild(record.container);
+        if (record) orderedContainers.push(record.container);
       }
+      orderedContainers.forEach((container, index) => { container.dataset.slot = String(index % 4); });
+      synchronizeComponentOrder(componentContainer, orderedContainers);
       for (const id of componentStates.keys()) if (!selected.some(item => item.componentId === id)) componentStates.delete(id);
       showStatus();
     } catch (error) { console.warn('BAP preset refresh failed', error); }

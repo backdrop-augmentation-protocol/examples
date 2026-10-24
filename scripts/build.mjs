@@ -74,7 +74,7 @@ for (const file of ['project.json', 'preview.png']) {
 
 const hostPackage = resolve(dist, 'workshop-host-wallpaper');
 await mkdir(hostPackage, { recursive: true });
-for (const file of ['index.html', 'main.js', 'manifest.json', 'project.json', 'preview.gif']) {
+for (const file of ['index.html', 'main.js', 'layout.js', 'manifest.json', 'project.json', 'preview.gif']) {
   await copyFile(resolve(root, 'host-wallpaper', file), resolve(hostPackage, file));
 }
 await cp(resolve(root, '..', 'host-sdk', 'dist'), resolve(hostPackage, 'sdk', 'host-sdk'), { recursive: true });
