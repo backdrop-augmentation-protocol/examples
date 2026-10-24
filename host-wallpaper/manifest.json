@@ -1,0 +1,9 @@
+{
+  "protocol": { "name": "bap", "version": "0.1.0", "profile": "core" },
+  "id": "org.bap.examples.host-wallpaper",
+  "name": "BAP Host Wallpaper Demo",
+  "version": "0.1.0",
+  "role": "host",
+  "capabilities": ["lifecycle", "config"],
+  "entrypoints": { "default": "index.html" }
+}
