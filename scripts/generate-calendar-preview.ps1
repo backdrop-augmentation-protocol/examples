@@ -1,12 +1,13 @@
 Add-Type -AssemblyName System.Drawing
 
 $destination = Join-Path $PSScriptRoot '..\calendar-widget\preview.png'
+$landscapePath = Join-Path $PSScriptRoot '..\assets\time-widget\river-sunset.jpg'
 $bitmap = [System.Drawing.Bitmap]::new(640, 360)
+$landscape = [System.Drawing.Image]::FromFile($landscapePath)
 $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
 $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
 $graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAliasGridFit
-$background = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(12, 30, 44))
-$card = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(24, 57, 76))
+$card = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(225, 24, 57, 76))
 $white = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(247, 244, 233))
 $muted = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(157, 217, 228))
 $today = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(255, 226, 163))
@@ -15,7 +16,9 @@ $labelFont = [System.Drawing.Font]::new('Segoe UI', 13)
 $titleFont = [System.Drawing.Font]::new('Segoe UI', 28)
 $dayFont = [System.Drawing.Font]::new('Segoe UI', 13)
 try {
-  $graphics.FillRectangle($background, 0, 0, 640, 360)
+  $cropHeight = [int]($landscape.Width * 360 / 640)
+  $cropY = [int](($landscape.Height - $cropHeight) / 2)
+  $graphics.DrawImage($landscape, [System.Drawing.Rectangle]::new(0, 0, 640, 360), [System.Drawing.Rectangle]::new(0, $cropY, $landscape.Width, $cropHeight), [System.Drawing.GraphicsUnit]::Pixel)
   $graphics.FillRectangle($card, 82, 22, 476, 316)
   $graphics.DrawString('BAP CALENDAR', $labelFont, $muted, 110, 46)
   $graphics.DrawString('Calendar', $titleFont, $white, 108, 84)
@@ -42,7 +45,7 @@ try {
   }
   $bitmap.Save($destination, [System.Drawing.Imaging.ImageFormat]::Png)
 } finally {
-  foreach ($resource in @($graphics, $bitmap, $background, $card, $white, $muted, $today, $dark, $labelFont, $titleFont, $dayFont)) {
+  foreach ($resource in @($graphics, $bitmap, $landscape, $card, $white, $muted, $today, $dark, $labelFont, $titleFont, $dayFont)) {
     $resource.Dispose()
   }
 }

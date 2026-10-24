@@ -8,7 +8,7 @@
 - `host/`：最小 Host 与 Companion mock 浏览器示例。
 - `host-wallpaper/`：使用官方 Host SDK 的真实 WE 主壁纸，包含循环视频、可选 BGM、WE 回调、暂停/恢复，以及通过独立 Companion 发现的多个组件。
 - `time-widget/`：使用官方 Component SDK 的双模式时间/日期组件。
-- `calendar-widget/`：形态不同的双模式月历组件，用于本地多组件联调；它不是 Workshop 上传项目。
+- `calendar-widget/`：形态不同的双模式月历组件；独立模式使用静态风景图，嵌入模式保持透明背景。
 - `assets/ASSET-PROVENANCE.md`：开放许可素材、来源和 SHA-256 记录。
 
 ## 构建与运行
@@ -33,16 +33,17 @@ npm run serve
 
 ## 隐藏 Workshop 测试项目
 
-`npm run build` 会生成两个相互独立的 Wallpaper Engine 项目目录：
-`dist/workshop-host-wallpaper/` 和 `dist/workshop-time-widget/`。两者分别包含
+`npm run build` 会生成三个相互独立的 Wallpaper Engine 项目目录：
+`dist/workshop-host-wallpaper/`、`dist/workshop-time-widget/` 和
+`dist/workshop-calendar-widget/`。三者分别包含
 `project.json`、所需 SDK 和媒体资源。宿主包不内置任何组件或 Companion 服务，
 只保留连接独立 Windows Companion 的轻量客户端。Companion 不可用时，视频壁纸仍可运行，
 但不会挂载组件。
 
 `dist/local-calendar-widget/` 是独立的本地组件包，具有不同的组件 ID，且不含
-`project.json`；它仅用于本地双组件测试。另有 `dist/we-local-calendar-widget/`
-包含有效的 WE 元数据和独立预览图，使独立模式作为一个本地编辑项目出现在 WE 中；
-它不是线上 Workshop item。
+`project.json`；它仅用于本地双组件测试。另有 `dist/workshop-calendar-widget/`
+包含符合现有项目模板的 WE 元数据、独立预览图和风景素材，可通过 WE 官方编辑器发布。
+仅构建或复制该目录不会在线发布。
 
 组件包的 `embedded.html` 在构建时生成自包含文档。宿主通过 Companion 的鉴权
 资源接口读取该文档，再使用 Host SDK 的隔离 `srcdoc` 模式挂载。组件文件不会

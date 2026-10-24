@@ -1,6 +1,6 @@
 {
   "contentrating": "Everyone",
-  "description": "A local-only BAP Component SDK calendar test wallpaper with Standalone and Embedded modes.",
+  "description": "A dual-mode BAP Component SDK calendar widget with an open-license landscape background in Standalone Mode.",
   "file": "index.html",
   "general": {
     "properties": {
@@ -15,8 +15,8 @@
   "preview": "preview.png",
   "ratingsex": "none",
   "ratingviolence": "none",
-  "tags": ["Clock"],
-  "title": "BAP Calendar Widget Local Test",
+  "tags": ["Nature", "Clock"],
+  "title": "BAP Calendar Widget Demo",
   "type": "web",
   "version": 2,
   "visibility": "private"

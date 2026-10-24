@@ -9,8 +9,8 @@ This repository contains a browser-runnable BAP MVP integration example:
 - `host-wallpaper/` is a Wallpaper Engine Web wallpaper using Host SDK,
   looping video, optional BGM, WE callbacks, and independently discovered components.
 - `time-widget/` is a real dual-mode component wallpaper using Component SDK.
-- `calendar-widget/` is a distinct dual-mode calendar component for local
-  multi-component integration tests; it is not a Workshop upload project.
+- `calendar-widget/` is a distinct dual-mode calendar component with a
+  landscape-backed Standalone Mode and a transparent Embedded Mode.
 - `assets/ASSET-PROVENANCE.md` records the open-license demo media and hashes.
 - `companion/` is a local HTTP mock for configuration and component discovery.
 - `host/` uses the official `host-sdk` `HostRuntime` to mount the iframe.
@@ -60,17 +60,18 @@ GET /api/config             -> persisted configuration
 
 ## Hidden Workshop test items
 
-`npm run build` creates two separate Wallpaper Engine project folders:
-`dist/workshop-host-wallpaper/` and `dist/workshop-time-widget/`. Each contains
+`npm run build` creates three separate Wallpaper Engine project folders:
+`dist/workshop-host-wallpaper/`, `dist/workshop-time-widget/`, and
+`dist/workshop-calendar-widget/`. Each contains
 its own `project.json`, required SDK, and media assets. The host package does
 not bundle components or the Companion service; it only contains a small client
 that connects to the separately running Windows Companion. Without Companion,
 the video wallpaper remains available but no widget is mounted. The separate
 `dist/local-calendar-widget/` package has a distinct component ID and no
 `project.json`; it is only for local multi-component testing. The separate
-`dist/we-local-calendar-widget/` package adds valid WE metadata and a distinct
-preview so its Standalone Mode appears as one local WE editor item. It is not
-an online Workshop item.
+`dist/workshop-calendar-widget/` package adds canonical WE metadata, a distinct
+preview, and the landscape asset for official-editor publication. Building or
+copying this package does not publish it online.
 
 The component package's `embedded.html` is built as a self-contained document.
 The Host retrieves it through the Companion's authenticated resource endpoint

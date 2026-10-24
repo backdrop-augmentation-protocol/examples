@@ -17,9 +17,9 @@
       "preview": "preview.jpg",
       "requiredTags": ["Nature", "Clock"]
     },
-    "BAP Calendar Widget Local Test": {
+    "BAP Calendar Widget Demo": {
       "preview": "preview.png",
-      "requiredTags": ["Clock"]
+      "requiredTags": ["Nature", "Clock"]
     }
   }
 }
