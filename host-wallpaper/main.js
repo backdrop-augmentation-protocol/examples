@@ -110,8 +110,9 @@ async function connectToCompanion() {
           try {
             const embedded = await companion.fetchCatalogResource(item.sourceKey, item.embeddedPath);
             if (embedded.size > 1024 * 1024) throw new Error('Embedded component exceeds the 1 MiB demo limit');
+            const srcdoc = await embedded.text();
             if (reconnectScheduled) return;
-            mountComponent(item, await embedded.text());
+            mountComponent(item, srcdoc);
             setComponentState(item.componentId, 'loading');
           } catch (error) {
             setComponentState(item.componentId, 'unavailable');
