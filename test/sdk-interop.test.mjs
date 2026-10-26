@@ -4,6 +4,13 @@ import { HostRuntime } from '../../host-sdk/dist/index.js';
 import { ComponentRuntime } from '../../component-sdk/src/runtime.js';
 import { PostMessageClient } from '../../component-sdk/src/post-message-client.js';
 import { BAP_PROTOCOL } from '../../component-sdk/src/protocol.js';
+import { readFile } from 'node:fs/promises';
+
+test('browser interop harness stays out of Workshop packages', async () => {
+  const page = await readFile(new URL('../dist/host-wallpaper/local-interop.html', import.meta.url), 'utf8');
+  assert.match(page, /Local SDK interop check/);
+  await assert.rejects(readFile(new URL('../dist/workshop-host-wallpaper/local-interop.html', import.meta.url)));
+});
 
 class FakeWindow {
   listeners = new Map();
