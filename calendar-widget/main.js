@@ -1,6 +1,5 @@
 import { ComponentRuntime } from '../sdk/component-sdk/runtime.js';
 import { PostMessageClient } from '../sdk/component-sdk/post-message-client.js';
-import { createResponse } from '../sdk/component-sdk/protocol.js';
 
 const embedded = window.parent !== window;
 const manifest = { protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, id: 'org.bap.examples.calendar-widget', name: 'BAP Calendar Widget Demo', version: '0.1.0', implementationVersion: '0.1.0', role: 'component', capabilities: ['lifecycle', 'config'], permissions: [], modes: ['standalone', 'embedded'], entrypoints: { default: './index.html', standalone: './index.html', embedded: './embedded.html' }, configScopes: ['global', 'wallpaper'], description: 'Open-license demo calendar widget' };
@@ -19,16 +18,6 @@ toggle.addEventListener('click', () => {
   grid.hidden = !expanded;
 });
 
-if (embedded) window.addEventListener('message', (event) => {
-  if (event.source !== window.parent) return;
-  const message = event.data;
-  if (message?.kind !== 'request' || !message.id) return;
-  const result = message.method === 'hello'
-    ? { protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, sessionId: 'examples-session', capabilities: manifest.capabilities, permissions: [] }
-    : { acknowledged: true, method: message.method };
-  const responseOrigin = window.location.protocol === 'file:' || window.location.protocol === 'about:' ? '*' : event.origin;
-  event.source.postMessage(createResponse(message, result, { sessionId: 'examples-session' }), responseOrigin);
-});
 
 function render() {
   const now = new Date();

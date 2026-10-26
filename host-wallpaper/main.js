@@ -51,21 +51,6 @@ function mountComponent(definition, srcdoc) {
   component.on('fault', (fault) => { setComponentState(id, 'unavailable'); console.warn(`BAP component ${id} unavailable; host continues`, JSON.stringify(fault)); });
   component.on('stopped', () => { if (mountedComponents.get(id)?.component === component) mountedComponents.delete(id); container.remove(); });
 }
-// The current SDKs expose the transport primitives independently. This tiny
-// demo adapter completes the symmetric request/response side of the iframe
-// handshake while the HostRuntime owns mounting, isolation, and lifecycle.
-window.addEventListener('message', (event) => {
-  const component = [...mountedComponents.values()].map(record => record.component).find((handle) => event.source === handle.iframe.contentWindow && handle.acceptsOrigin(event.origin));
-  if (!component) return;
-  const message = event.data;
-  if (message?.kind !== 'request' || !message.id) return;
-  const result = message.method === 'hello'
-    ? { protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, sessionId: 'examples-session', capabilities: ['lifecycle', 'config'], permissions: [] }
-    : { acknowledged: true, method: message.method };
-  const responseOrigin = '*';
-  event.source.postMessage({ protocol: message.protocol, kind: 'response', id: `res-${message.id}`, correlationId: message.id, timestamp: new Date().toISOString(), ok: true, result, sessionId: 'examples-session' }, responseOrigin);
-});
-
 const adapter = {
   // Auto-layout containers are measured per component below.
   onSize() {},
