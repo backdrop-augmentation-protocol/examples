@@ -4,12 +4,11 @@
 
 本仓库提供 BAP MVP 的浏览器示例和真实 Wallpaper Engine Web Demo：
 
-- `component/`：支持 Standalone/Embedded 的旧版时钟组件示例。
-- `host/`：最小 Host 与 Companion mock 浏览器示例。
 - `host-wallpaper/`：使用官方 Host SDK 的真实 WE 主壁纸，包含循环视频、可选 BGM、WE 回调、暂停/恢复，以及通过独立 Companion 发现的多个组件。
 - `time-widget/`：使用官方 Component SDK 的双模式时间/日期组件。
 - `calendar-widget/`：形态不同的双模式月历组件；独立模式使用静态风景图，嵌入模式保持透明背景。
 - `assets/ASSET-PROVENANCE.md`：开放许可素材、来源和 SHA-256 记录。
+- `companion/client.js`：连接单独安装的 Companion 软件，而非提供另一套协议实现。
 
 ## 构建与运行
 
@@ -21,8 +20,6 @@ npm run serve
 
 浏览器示例：
 
-- `http://127.0.0.1:4173/host/`
-- `http://127.0.0.1:4173/component/`
 - `http://127.0.0.1:4173/host-wallpaper/`
 - `http://127.0.0.1:4173/time-widget/`
 - `http://127.0.0.1:4173/calendar-widget/`

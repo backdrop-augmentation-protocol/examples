@@ -11,7 +11,7 @@ for (const directory of ['host-wallpaper', 'time-widget', 'calendar-widget']) {
 const dist = resolve(root, 'dist');
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
-for (const directory of ['component', 'host', 'shared', 'companion', 'host-wallpaper', 'time-widget', 'calendar-widget', 'assets']) {
+for (const directory of ['companion', 'host-wallpaper', 'time-widget', 'calendar-widget', 'assets']) {
   await cp(resolve(root, directory), resolve(dist, directory), { recursive: true });
 }
 await mkdir(resolve(dist, 'sdk', 'host-sdk'), { recursive: true });
