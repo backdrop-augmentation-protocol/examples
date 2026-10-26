@@ -19,7 +19,8 @@ test('reads embedded resources without using the HTTP cache', async t => {
     addEventListener(name, listener) { this.listeners.set(name, listener); }
     send(value) {
       const message = JSON.parse(value);
-      queueMicrotask(() => this.listeners.get('message')?.({ data: JSON.stringify({ correlationId: message.id, ok: true, result: {} }) }));
+      assert.deepEqual(message.payload.protocolVersions, ['0.1.0']);
+      queueMicrotask(() => this.listeners.get('message')?.({ data: JSON.stringify({ correlationId: message.id, ok: true, result: { selectedProtocol: message.protocol, role: 'companion', capabilities: [], permissions: [] } }) }));
     }
     close() {}
   };
