@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/component-sdk
-          ref: ffa6e7d2d3daecf1b2ddcce2f9aca78a90c46c56
+          ref: a00b93d8feec70fe3425d10a81be5f0df3ed310c
           path: component-sdk
       - uses: actions/checkout@v6
         with:
