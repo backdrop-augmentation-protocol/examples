@@ -1,0 +1,35 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: examples
+      - uses: actions/checkout@v6
+        with:
+          repository: backdrop-augmentation-protocol/host-sdk
+          ref: 70fab503ae1da099a5ff15c86a4c32b38e8d8bae
+          path: host-sdk
+      - uses: actions/checkout@v6
+        with:
+          repository: backdrop-augmentation-protocol/component-sdk
+          ref: 8d21c893389a7c381fd5c7eb2aafdb1cab6ba875
+          path: component-sdk
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: examples/package-lock.json
+      - run: npm ci && npm run build
+        working-directory: host-sdk
+      - run: npm ci
+        working-directory: examples
+      - run: npm test
+        working-directory: examples
