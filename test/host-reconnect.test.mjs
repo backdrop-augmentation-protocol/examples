@@ -1,0 +1,55 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+async function waitFor(predicate) {
+  const deadline = Date.now() + 1000;
+  while (!predicate() && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 5));
+  assert.equal(predicate(), true, 'Host connection state did not settle');
+}
+
+test('the actual Host demo reconnects to Companion after its socket closes', async t => {
+  const original = Object.fromEntries(['window', 'document', 'Audio', 'fetch', 'WebSocket', 'setTimeout', 'setInterval'].map(key => [key, globalThis[key]]));
+  const intervals = new Set();
+  const retryTimers = new Set();
+  const sockets = [];
+  t.after(() => {
+    for (const timer of intervals) clearInterval(timer);
+    for (const timer of retryTimers) clearTimeout(timer);
+    for (const [key, value] of Object.entries(original)) globalThis[key] = value;
+  });
+
+  const status = { textContent: '' };
+  const video = { muted: true, volume: 0, load() {}, play: async () => {}, pause() {} };
+  const elements = { '#video': video, '#volume': { value: '0.5' }, '#toggle': { textContent: '' }, '#companion-status': status, '#components': { children: [], appendChild() {} } };
+  globalThis.window = { addEventListener() {} };
+  globalThis.document = { baseURI: 'https://host.test/', querySelector(selector) { return elements[selector]; } };
+  globalThis.window.document = globalThis.document;
+  globalThis.Audio = class { loop = false; volume = 0; play = async () => {}; pause() {} };
+  globalThis.setTimeout = (fn, ms, ...args) => {
+    const timer = original.setTimeout(fn, ms === 3000 ? 10 : ms, ...args);
+    if (ms === 3000) retryTimers.add(timer);
+    return timer;
+  };
+  globalThis.setInterval = (fn, ms, ...args) => { const timer = original.setInterval(fn, ms, ...args); intervals.add(timer); return timer; };
+  let sessions = 0;
+  globalThis.fetch = async (url) => {
+    if (url.endsWith('/v1/session')) return { ok: true, json: async () => ({ sessionId: `session-${++sessions}`, accessToken: `token-${sessions}` }) };
+    if (url.includes('/v1/hosts/')) return { ok: true, json: async () => [] };
+    throw new Error(`Unexpected Host request: ${url}`);
+  };
+  globalThis.WebSocket = class {
+    listeners = new Map();
+    constructor() { sockets.push(this); queueMicrotask(() => this.emit('open', {})); }
+    addEventListener(name, listener) { const set = this.listeners.get(name) || new Set(); set.add(listener); this.listeners.set(name, set); }
+    emit(name, event) { for (const listener of this.listeners.get(name) || []) listener(event); }
+    send(value) { const request = JSON.parse(value); queueMicrotask(() => this.emit('message', { data: JSON.stringify({ correlationId: request.id, ok: true, result: { selectedProtocol: request.protocol, role: 'companion', capabilities: [], permissions: [] } }) })); }
+    close() { this.emit('close', {}); }
+  };
+
+  await import(new URL('../dist/host-wallpaper/main.js', import.meta.url));
+  await waitFor(() => status.textContent.startsWith('Companion: connected') && sessions === 1);
+  sockets[0].emit('close', {});
+  assert.match(status.textContent, /^Companion: offline; reconnecting/);
+  await waitFor(() => status.textContent.startsWith('Companion: connected') && sessions === 2);
+  assert.equal(sockets.length, 2);
+});
