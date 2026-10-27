@@ -29,7 +29,7 @@ async function startServer(port) {
   const baseUrl = `http://127.0.0.1:${port}`;
   const deadline = Date.now() + 10000;
   while (Date.now() < deadline && child.exitCode === null) {
-    try { if ((await fetch(`${baseUrl}/healthz`)).ok) return { child, baseUrl }; } catch { /* starting */ }
+    try { if ((await fetch(`${baseUrl}/healthz`)).ok) return { child, baseUrl, getOutput: () => output }; } catch { /* starting */ }
     await new Promise(resolveWait => setTimeout(resolveWait, 50));
   }
   child.kill('SIGKILL');
@@ -130,6 +130,8 @@ test('real Companion HTTP permissions require a live negotiated Host session', {
     const hello = JSON.parse((await reply).data);
     assert.equal(hello.ok, true);
     assert.deepEqual(hello.result.permissions, ['config.read']);
+    await new Promise(resolveWait => setTimeout(resolveWait, 20));
+    assert.equal(server.getOutput().includes(session.accessToken), false, 'routine server logs must not include WebSocket bearer tokens');
     assert.equal((await fetch(`${server.baseUrl}/v1/config`, { headers })).status, 200);
     assert.equal((await fetch(`${server.baseUrl}/v1/components`, { headers })).status, 403);
     assert.equal((await fetch(`${server.baseUrl}/v1/config/global`, { method: 'PUT', headers: { ...headers, 'content-type': 'application/json' }, body: '{}' })).status, 403);
