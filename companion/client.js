@@ -11,7 +11,15 @@ export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clie
   const rejectPending = (message) => { disconnected = true; for (const item of pending.values()) { clearTimeout(item.timer); item.reject(new Error(message)); } pending.clear(); };
   socket.addEventListener('close', () => rejectPending('Companion WebSocket closed'));
   socket.addEventListener('error', () => rejectPending('Companion WebSocket connection failed'));
-  socket.addEventListener('message', (event) => { const message = JSON.parse(event.data); const item = pending.get(message.correlationId); if (!item) return; pending.delete(message.correlationId); clearTimeout(item.timer); if (message.ok) item.resolve(message.result); else item.reject(new Error(message.error?.message || 'Companion request failed')); });
+  socket.addEventListener('message', (event) => {
+    let message;
+    try { message = JSON.parse(event.data); }
+    catch { rejectPending('Companion sent a malformed WebSocket response'); socket.close(); return; }
+    const item = pending.get(message?.correlationId);
+    if (!item) return;
+    pending.delete(message.correlationId); clearTimeout(item.timer);
+    if (message.ok) item.resolve(message.result); else item.reject(new Error(message.error?.message || 'Companion request failed'));
+  });
   let hello;
   try {
     await new Promise((resolve, reject) => { socket.addEventListener('open', resolve, { once: true }); socket.addEventListener('error', () => reject(new Error('Companion WebSocket connection failed')), { once: true }); socket.addEventListener('close', () => reject(new Error('Companion WebSocket closed before opening')), { once: true }); });

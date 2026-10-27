@@ -80,3 +80,20 @@ test('Companion hello timeout does not leave a pending connection', async t => {
   await assert.rejects(connectCompanion({ handshakeTimeoutMs: 10 }), /hello timed out/);
   assert.equal(closed, true);
 });
+
+test('malformed Companion hello response rejects instead of throwing from an event listener', async t => {
+  const originalFetch = globalThis.fetch;
+  const originalSocket = globalThis.WebSocket;
+  t.after(() => { globalThis.fetch = originalFetch; globalThis.WebSocket = originalSocket; });
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({ sessionId: 'session', accessToken: 'token' }) });
+  let closed = false;
+  globalThis.WebSocket = class {
+    listeners = new Map();
+    constructor() { queueMicrotask(() => this.listeners.get('open')?.({})); }
+    addEventListener(name, listener) { this.listeners.set(name, listener); }
+    send() { queueMicrotask(() => this.listeners.get('message')?.({ data: '{' })); }
+    close() { closed = true; }
+  };
+  await assert.rejects(connectCompanion({ handshakeTimeoutMs: 100 }), /malformed WebSocket response/);
+  assert.equal(closed, true);
+});
