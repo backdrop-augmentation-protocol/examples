@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/companion
-          ref: 3c2a5fd48e14ccd043ea6449beccdb1741575264
+          ref: a2db36d175ab1f563f36a5413914ddcae2ccd835
           path: companion
       - uses: actions/setup-node@v6
         with:

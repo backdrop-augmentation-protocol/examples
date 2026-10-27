@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { resolve } from 'node:path';
 import { once } from 'node:events';
+import { request as httpRequest } from 'node:http';
 import { connectCompanion } from '../companion/client.js';
 
 const serverDll = process.env.BAP_COMPANION_SERVER;
@@ -98,6 +99,15 @@ test('real Companion HTTP permissions require a live negotiated Host session', {
   const server = await startServer(port);
   let socket;
   try {
+    const wrongHostStatus = await new Promise((resolveStatus, rejectStatus) => {
+      const request = httpRequest(`${server.baseUrl}/healthz`, { headers: { host: 'attacker.example' } }, response => {
+        response.resume();
+        resolveStatus(response.statusCode);
+      });
+      request.on('error', rejectStatus);
+      request.end();
+    });
+    assert.equal(wrongHostStatus, 403);
     const created = await fetch(`${server.baseUrl}/v1/session`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ clientName: 'permission test', clientKind: 'host', protocol: { name: 'bap', version: '0.1.0', profile: 'core' } }),
