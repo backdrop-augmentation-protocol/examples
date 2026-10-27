@@ -22,6 +22,11 @@ jobs:
           repository: backdrop-augmentation-protocol/component-sdk
           ref: 8d21c893389a7c381fd5c7eb2aafdb1cab6ba875
           path: component-sdk
+      - uses: actions/checkout@v6
+        with:
+          repository: backdrop-augmentation-protocol/conformance
+          ref: faf8f387d466519731bf7fefa178d68df3dbf284
+          path: conformance
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
@@ -29,6 +34,8 @@ jobs:
           cache-dependency-path: examples/package-lock.json
       - run: npm ci && npm run build
         working-directory: host-sdk
+      - run: npm ci && npm run spec:install
+        working-directory: conformance
       - run: npm ci
         working-directory: examples
       - run: npm test
