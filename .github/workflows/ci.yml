@@ -27,16 +27,28 @@ jobs:
           repository: backdrop-augmentation-protocol/conformance
           ref: faf8f387d466519731bf7fefa178d68df3dbf284
           path: conformance
+      - uses: actions/checkout@v6
+        with:
+          repository: backdrop-augmentation-protocol/companion
+          ref: 22ebbdebb05ff02474f76c270a3c62ac63abe528
+          path: companion
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: examples/package-lock.json
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
       - run: npm ci && npm run build
         working-directory: host-sdk
       - run: npm ci && npm run spec:install
         working-directory: conformance
       - run: npm ci
         working-directory: examples
+      - run: dotnet publish src/Companion.Server/Companion.Server.csproj --configuration Release --output artifacts/ci-server
+        working-directory: companion
       - run: npm test
         working-directory: examples
+        env:
+          BAP_COMPANION_SERVER: ../companion/artifacts/ci-server/Bap.Companion.Server.dll
