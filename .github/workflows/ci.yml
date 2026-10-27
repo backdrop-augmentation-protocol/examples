@@ -14,23 +14,28 @@ jobs:
           path: examples
       - uses: actions/checkout@v6
         with:
+          repository: backdrop-augmentation-protocol/spec
+          ref: fc372322a72741c52db6fd3fa7ad62eb47443c8b
+          path: spec
+      - uses: actions/checkout@v6
+        with:
           repository: backdrop-augmentation-protocol/host-sdk
-          ref: 70fab503ae1da099a5ff15c86a4c32b38e8d8bae
+          ref: 15c7d67edb89979e6f60b35e1ad8fa4c4321b7c8
           path: host-sdk
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/component-sdk
-          ref: 8d21c893389a7c381fd5c7eb2aafdb1cab6ba875
+          ref: ffa6e7d2d3daecf1b2ddcce2f9aca78a90c46c56
           path: component-sdk
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/conformance
-          ref: faf8f387d466519731bf7fefa178d68df3dbf284
+          ref: aae31333fcc41210daeac9a2dbfe763860d50fde
           path: conformance
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/companion
-          ref: 22ebbdebb05ff02474f76c270a3c62ac63abe528
+          ref: 854915c4ecc863c2df69d27eb7c2a7cb8c955b76
           path: companion
       - uses: actions/setup-node@v6
         with:

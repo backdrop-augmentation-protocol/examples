@@ -92,3 +92,51 @@ test('official Host client rejects bad Companion versions and reconnects after a
     await stopServer(server.child);
   }
 });
+
+test('real Companion HTTP permissions require a live negotiated Host session', { skip: !serverDll }, async () => {
+  const port = await freePort();
+  const server = await startServer(port);
+  let socket;
+  try {
+    const created = await fetch(`${server.baseUrl}/v1/session`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ clientName: 'permission test', clientKind: 'host', protocol: { name: 'bap', version: '0.1.0', profile: 'core' } }),
+    });
+    assert.equal(created.status, 200);
+    const session = await created.json();
+    const headers = { authorization: `Bearer ${session.accessToken}` };
+    assert.equal((await fetch(`${server.baseUrl}/v1/config`, { headers })).status, 403);
+    assert.equal((await fetch(`${server.baseUrl}/v1/config?token=${encodeURIComponent(session.accessToken)}`)).status, 401);
+
+    socket = new WebSocket(`ws://127.0.0.1:${port}/v1/ws?token=${encodeURIComponent(session.accessToken)}`);
+    await socketEvent(socket, 'open');
+    const reply = socketEvent(socket, 'message');
+    socket.send(JSON.stringify({
+      protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, kind: 'request', id: 'permission-hello',
+      timestamp: new Date().toISOString(), method: 'hello',
+      payload: { role: 'host', identity: { id: 'org.bap.examples.host-wallpaper', name: 'Host', version: '0.1.0' },
+        protocolVersions: ['0.1.0'], capabilities: ['config'], requestedPermissions: ['config.read', 'component.discovery'] },
+    }));
+    const hello = JSON.parse((await reply).data);
+    assert.equal(hello.ok, true);
+    assert.deepEqual(hello.result.permissions, ['config.read']);
+    assert.equal((await fetch(`${server.baseUrl}/v1/config`, { headers })).status, 200);
+    assert.equal((await fetch(`${server.baseUrl}/v1/components`, { headers })).status, 403);
+    assert.equal((await fetch(`${server.baseUrl}/v1/config/global`, { method: 'PUT', headers: { ...headers, 'content-type': 'application/json' }, body: '{}' })).status, 403);
+
+    const closed = socketEvent(socket, 'close');
+    socket.close();
+    await closed;
+    const deadline = Date.now() + 1000;
+    let status;
+    do {
+      status = (await fetch(`${server.baseUrl}/v1/config`, { headers })).status;
+      if (status === 403) break;
+      await new Promise(resolveWait => setTimeout(resolveWait, 10));
+    } while (Date.now() < deadline);
+    assert.equal(status, 403);
+  } finally {
+    socket?.close();
+    await stopServer(server.child);
+  }
+});
