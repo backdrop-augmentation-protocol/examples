@@ -64,6 +64,19 @@ test('official Host client rejects bad Companion versions and reconnects after a
     client = await connectCompanion({ baseUrl: server.baseUrl });
     assert.equal(client.hello.role, 'companion');
     assert.equal(client.hello.selectedProtocol.version, '0.1.0');
+    const malformed = new WebSocket(`ws://127.0.0.1:${port}/v1/ws?token=${encodeURIComponent(client.session.accessToken)}`);
+    await socketEvent(malformed, 'open');
+    const rejected = socketEvent(malformed, 'message');
+    malformed.send(JSON.stringify({
+      protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, kind: 'request', id: 'bad-hello',
+      timestamp: new Date().toISOString(), method: 'hello',
+      payload: { role: 'component', identity: { id: 'wrong.role', name: 'Wrong', version: '0.1.0' }, protocolVersions: ['0.1.0'] },
+    }));
+    const badReply = JSON.parse((await rejected).data);
+    assert.equal(badReply.correlationId, 'bad-hello');
+    assert.equal(badReply.ok, false);
+    assert.equal(badReply.error.code, 'UNSUPPORTED_VERSION');
+    malformed.close();
     const closed = socketEvent(client.socket, 'close');
     await Promise.all([stopServer(server.child), closed]);
 
