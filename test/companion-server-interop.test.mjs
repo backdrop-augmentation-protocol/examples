@@ -31,14 +31,14 @@ async function startServer(port) {
     try { if ((await fetch(`${baseUrl}/healthz`)).ok) return { child, baseUrl }; } catch { /* starting */ }
     await new Promise(resolveWait => setTimeout(resolveWait, 50));
   }
-  child.kill();
+  child.kill('SIGKILL');
   throw new Error(`Companion test server did not start: ${output.slice(-1200)}`);
 }
 
 async function stopServer(child) {
   if (child.exitCode !== null) return;
   const exited = once(child, 'exit');
-  child.kill();
+  child.kill('SIGKILL');
   await exited;
 }
 
@@ -65,8 +65,7 @@ test('official Host client rejects bad Companion versions and reconnects after a
     assert.equal(client.hello.role, 'companion');
     assert.equal(client.hello.selectedProtocol.version, '0.1.0');
     const closed = socketEvent(client.socket, 'close');
-    await stopServer(server.child);
-    await closed;
+    await Promise.all([stopServer(server.child), closed]);
 
     server = await startServer(port);
     const restored = await connectCompanion({ baseUrl: server.baseUrl });
