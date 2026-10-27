@@ -123,6 +123,8 @@ test('real Companion HTTP permissions require a live negotiated Host session', {
     assert.equal((await fetch(`${server.baseUrl}/v1/config`, { headers })).status, 200);
     assert.equal((await fetch(`${server.baseUrl}/v1/components`, { headers })).status, 403);
     assert.equal((await fetch(`${server.baseUrl}/v1/config/global`, { method: 'PUT', headers: { ...headers, 'content-type': 'application/json' }, body: '{}' })).status, 403);
+    assert.equal((await fetch(`${server.baseUrl}/v1/components/example.clock/launch`, { method: 'POST', headers })).status, 404);
+    assert.equal((await fetch(`${server.baseUrl}/v1/content/legacy/example.clock/index.html`)).status, 404);
 
     const closed = socketEvent(socket, 'close');
     socket.close();
