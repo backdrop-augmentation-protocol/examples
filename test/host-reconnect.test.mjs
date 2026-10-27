@@ -9,12 +9,21 @@ async function waitFor(predicate) {
 
 test('the actual Host demo reconnects to Companion after its socket closes', async t => {
   const original = Object.fromEntries(['window', 'document', 'Audio', 'fetch', 'WebSocket', 'setTimeout', 'setInterval'].map(key => [key, globalThis[key]]));
+  const { HostRuntime } = await import('../dist/sdk/host-sdk/index.js');
+  const originalPauseAll = HostRuntime.prototype.pauseAll;
+  const originalResumeAll = HostRuntime.prototype.resumeAll;
+  let pauseCalls = 0;
+  let resumeCalls = 0;
+  HostRuntime.prototype.pauseAll = function () { pauseCalls++; return originalPauseAll.call(this); };
+  HostRuntime.prototype.resumeAll = function () { resumeCalls++; return originalResumeAll.call(this); };
   const intervals = new Set();
   const retryTimers = new Set();
   const sockets = [];
   t.after(() => {
     for (const timer of intervals) clearInterval(timer);
     for (const timer of retryTimers) clearTimeout(timer);
+    HostRuntime.prototype.pauseAll = originalPauseAll;
+    HostRuntime.prototype.resumeAll = originalResumeAll;
     for (const [key, value] of Object.entries(original)) globalThis[key] = value;
   });
 
@@ -48,6 +57,11 @@ test('the actual Host demo reconnects to Companion after its socket closes', asy
 
   await import(new URL('../dist/host-wallpaper/main.js', import.meta.url));
   await waitFor(() => status.textContent.startsWith('Companion: connected') && sessions === 1);
+  assert.equal(typeof window.wallpaperPropertyListener.setPaused, 'function');
+  window.wallpaperPropertyListener.setPaused(true);
+  assert.equal(pauseCalls, 1);
+  window.wallpaperPropertyListener.setPaused(false);
+  assert.equal(resumeCalls, 1);
   sockets[0].emit('close', {});
   assert.match(status.textContent, /^Companion: offline; reconnecting/);
   await waitFor(() => status.textContent.startsWith('Companion: connected') && sessions === 2);

@@ -159,10 +159,9 @@ window.wallpaperPropertyListener = {
     if (!video.muted) startAudio(); else { optionalBgm.pause(); fallbackAudio?.suspend(); }
     toggle.textContent = video.muted ? 'Unmute' : 'Mute';
   },
+  setPaused(isPaused) { setMediaState({ paused: isPaused }); },
 };
 window.wallpaperRegisterAudioListener = () => {};
-window.wallpaperRequestPaused = () => setMediaState({ paused: true });
-window.wallpaperRequestResumed = () => setMediaState({ paused: false });
 
 volume.oninput = () => { video.volume = Number(volume.value); optionalBgm.volume = Number(volume.value); };
 toggle.onclick = () => { video.muted = !video.muted; toggle.textContent = video.muted ? 'Unmute' : 'Mute'; if (video.muted) { optionalBgm.pause(); fallbackAudio?.suspend(); } else startAudio(); };
