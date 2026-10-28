@@ -17,6 +17,7 @@ test('the actual Host demo reconnects to Companion after its socket closes', asy
   HostRuntime.prototype.pauseAll = function () { pauseCalls++; return originalPauseAll.call(this); };
   HostRuntime.prototype.resumeAll = function () { resumeCalls++; return originalResumeAll.call(this); };
   const intervals = new Set();
+  const refreshCallbacks = [];
   const retryTimers = new Set();
   const sockets = [];
   t.after(() => {
@@ -39,20 +40,24 @@ test('the actual Host demo reconnects to Companion after its socket closes', asy
     if (ms === 3000) retryTimers.add(timer);
     return timer;
   };
-  globalThis.setInterval = (fn, ms, ...args) => { const timer = original.setInterval(fn, ms, ...args); intervals.add(timer); return timer; };
+  globalThis.setInterval = (fn, ms, ...args) => { const timer = original.setInterval(fn, ms, ...args); intervals.add(timer); refreshCallbacks.push(fn); return timer; };
   let sessions = 0;
-  globalThis.fetch = async (url) => {
+  let expireSecondSession = false;
+  globalThis.fetch = async (url, options) => {
     if (url.endsWith('/v1/session')) return { ok: true, json: async () => ({ sessionId: `session-${++sessions}`, accessToken: `token-${sessions}` }) };
-    if (url.includes('/v1/hosts/')) return { ok: true, json: async () => [] };
+    if (url.includes('/v1/hosts/')) return expireSecondSession && options.headers.authorization === 'Bearer token-2'
+      ? { ok: false, status: 401 }
+      : { ok: true, json: async () => [] };
     throw new Error(`Unexpected Host request: ${url}`);
   };
   globalThis.WebSocket = class {
     listeners = new Map();
+    closed = false;
     constructor() { sockets.push(this); queueMicrotask(() => this.emit('open', {})); }
     addEventListener(name, listener) { const set = this.listeners.get(name) || new Set(); set.add(listener); this.listeners.set(name, set); }
     emit(name, event) { for (const listener of this.listeners.get(name) || []) listener(event); }
     send(value) { const request = JSON.parse(value); queueMicrotask(() => this.emit('message', { data: JSON.stringify({ correlationId: request.id, ok: true, result: { selectedProtocol: request.protocol, role: 'companion', capabilities: [], permissions: [] } }) })); }
-    close() { this.emit('close', {}); }
+    close() { this.closed = true; this.emit('close', {}); }
   };
 
   await import(new URL('../dist/host-wallpaper/main.js', import.meta.url));
@@ -66,4 +71,9 @@ test('the actual Host demo reconnects to Companion after its socket closes', asy
   assert.match(status.textContent, /^Companion: offline; reconnecting/);
   await waitFor(() => status.textContent.startsWith('Companion: connected') && sessions === 2);
   assert.equal(sockets.length, 2);
+  expireSecondSession = true;
+  await refreshCallbacks.at(-1)();
+  await waitFor(() => status.textContent.startsWith('Companion: connected') && sessions === 3);
+  assert.equal(sockets[1].closed, true);
+  assert.equal(sockets.length, 3);
 });
