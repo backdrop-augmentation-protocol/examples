@@ -27,7 +27,16 @@ export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clie
     hello = await request('hello', { role: 'host', identity: { id: 'org.bap.examples.host-wallpaper', name: clientName, version: '0.1.0' }, protocolVersions: ['0.1.0'], capabilities: ['component-discovery', 'config'], requestedPermissions: ['component.discovery', 'config.read', 'config.write'] });
     if (hello?.role !== 'companion' || hello.selectedProtocol?.name !== PROTOCOL.name || hello.selectedProtocol.profile !== PROTOCOL.profile || hello.selectedProtocol.version !== PROTOCOL.version) throw new Error('Companion hello acknowledgement is invalid');
   } catch (error) { socket.close(); throw error; }
-  const authFetch = (path, options = {}) => fetch(`${httpBase}${path}`, { ...options, headers: { authorization: `Bearer ${session.accessToken}`, ...(options.headers || {}) } });
+  const authFetch = async (path, options = {}) => {
+    const response = await fetch(`${httpBase}${path}`, { ...options, headers: { authorization: `Bearer ${session.accessToken}`, ...(options.headers || {}) } });
+    // A session can expire while its WebSocket remains open. Closing the socket
+    // lets the Host's existing reconnect path obtain a fresh session.
+    if (response.status === 401) {
+      socket.close();
+      throw new Error('Companion session expired: HTTP 401');
+    }
+    return response;
+  };
   async function readJson(path, label) { const response = await authFetch(path); if (!response.ok) throw new Error(`${label}: HTTP ${response.status}`); return response.json(); }
   return {
     session,

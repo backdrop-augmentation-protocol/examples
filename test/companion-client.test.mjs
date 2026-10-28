@@ -64,6 +64,39 @@ test('a dropped Companion hello rejects promptly and a fresh session can connect
   restored.close();
 });
 
+test('an expired HTTP session closes its still-open socket and permits a fresh connection', async t => {
+  const originalFetch = globalThis.fetch;
+  const originalSocket = globalThis.WebSocket;
+  t.after(() => { globalThis.fetch = originalFetch; globalThis.WebSocket = originalSocket; });
+  let sessions = 0;
+  const sockets = [];
+  globalThis.fetch = async (url, options) => {
+    if (url.endsWith('/v1/session')) return { ok: true, json: async () => ({ sessionId: `session-${++sessions}`, accessToken: `token-${sessions}` }) };
+    assert.match(url, /\/v1\/components$/);
+    assert.equal(options.headers.authorization, `Bearer token-${sessions}`);
+    return sessions === 1 ? { ok: false, status: 401 } : { ok: true, status: 200, json: async () => [] };
+  };
+  globalThis.WebSocket = class {
+    listeners = new Map();
+    closed = false;
+    constructor() { sockets.push(this); queueMicrotask(() => this.emit('open', {})); }
+    addEventListener(name, listener) { const set = this.listeners.get(name) || new Set(); set.add(listener); this.listeners.set(name, set); }
+    emit(name, event) { for (const listener of this.listeners.get(name) || []) listener(event); }
+    send(value) {
+      const message = JSON.parse(value);
+      queueMicrotask(() => this.emit('message', { data: JSON.stringify({ correlationId: message.id, ok: true, result: { selectedProtocol: message.protocol, role: 'companion', capabilities: [], permissions: [] } }) }));
+    }
+    close() { this.closed = true; this.emit('close', {}); }
+  };
+  const expired = await connectCompanion();
+  await assert.rejects(expired.listComponents(), /session expired: HTTP 401/);
+  assert.equal(sockets[0].closed, true);
+  const restored = await connectCompanion();
+  assert.equal(restored.session.sessionId, 'session-2');
+  assert.deepEqual(await restored.listComponents(), []);
+  restored.close();
+});
+
 test('Companion hello timeout does not leave a pending connection', async t => {
   const originalFetch = globalThis.fetch;
   const originalSocket = globalThis.WebSocket;
