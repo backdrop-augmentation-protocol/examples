@@ -11,5 +11,9 @@
   },
   "devDependencies": {
     "esbuild": "0.28.2"
+  },
+  "dependencies": {
+    "@backdrop-augmentation-protocol/component-sdk": "0.1.0",
+    "@backdrop-augmentation-protocol/host-sdk": "0.1.0"
   }
 }

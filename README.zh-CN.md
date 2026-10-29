@@ -26,7 +26,7 @@ npm run serve
 
 真实壁纸 Demo 构建后可复制到临时 Wallpaper Engine Web 壁纸项目中。主壁纸使用仓库内的 MDN 花朵视频；如果需要 BGM，可将获得许可的 `bgm.ogg` 放入 `assets/host-wallpaper/`。缺少该文件时，Demo 使用 Web Audio fallback 音调验证静音和音量行为。
 
-`npm run build` 会从相邻的 `host-sdk` 和 `component-sdk` 仓库复制官方 SDK 到 `dist/sdk/`，不会重复实现 SDK 运行时。
+`npm ci` 会安装 `package-lock.json` 中记录的已发布 BAP Host SDK 和 Component SDK。构建时会将这些官方 SDK 文件复制到自包含的 Demo 和 Workshop 项目包中。构建产物写入 `dist/`，并由 Git 忽略。
 
 ## 隐藏 Workshop 测试项目
 

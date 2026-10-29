@@ -19,18 +19,8 @@ jobs:
           path: spec
       - uses: actions/checkout@v6
         with:
-          repository: backdrop-augmentation-protocol/host-sdk
-          ref: 15c7d67edb89979e6f60b35e1ad8fa4c4321b7c8
-          path: host-sdk
-      - uses: actions/checkout@v6
-        with:
-          repository: backdrop-augmentation-protocol/component-sdk
-          ref: a00b93d8feec70fe3425d10a81be5f0df3ed310c
-          path: component-sdk
-      - uses: actions/checkout@v6
-        with:
           repository: backdrop-augmentation-protocol/conformance
-          ref: 792bb10f69b1cb85031e7be4d020908ac8e99a8f
+          ref: be409180718fc8762e217116d8e32c93ead918b9
           path: conformance
       - uses: actions/checkout@v6
         with:
@@ -45,8 +35,6 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
-      - run: npm ci && npm run build
-        working-directory: host-sdk
       - run: npm ci && npm run spec:install
         working-directory: conformance
       - run: npm ci

@@ -5,6 +5,8 @@ import { validateProjectMetadata, validateWorkshopPackage } from './validate-wor
 import { buildInlineEmbedded } from './build-inline-embedded.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const hostSdk = resolve(root, 'node_modules', '@backdrop-augmentation-protocol', 'host-sdk');
+const componentSdk = resolve(root, 'node_modules', '@backdrop-augmentation-protocol', 'component-sdk');
 for (const directory of ['host-wallpaper', 'time-widget', 'calendar-widget']) {
   validateProjectMetadata(JSON.parse(await readFile(resolve(root, directory, 'project.json'), 'utf8')));
 }
@@ -15,9 +17,9 @@ for (const directory of ['companion', 'host-wallpaper', 'time-widget', 'calendar
   await cp(resolve(root, directory), resolve(dist, directory), { recursive: true });
 }
 await mkdir(resolve(dist, 'sdk', 'host-sdk'), { recursive: true });
-await cp(resolve(root, '..', 'host-sdk', 'dist'), resolve(dist, 'sdk', 'host-sdk'), { recursive: true });
+await cp(resolve(hostSdk, 'dist'), resolve(dist, 'sdk', 'host-sdk'), { recursive: true });
 await mkdir(resolve(dist, 'sdk', 'component-sdk'), { recursive: true });
-await cp(resolve(root, '..', 'component-sdk', 'src'), resolve(dist, 'sdk', 'component-sdk'), { recursive: true });
+await cp(resolve(componentSdk, 'src'), resolve(dist, 'sdk', 'component-sdk'), { recursive: true });
 
 async function replaceIn(file, replacements) {
   let content = await readFile(file, 'utf8');
@@ -39,7 +41,7 @@ await mkdir(widgetPackage, { recursive: true });
 for (const file of ['index.html', 'embedded.html', 'main.js', 'manifest.json', 'project.json', 'preview.jpg']) {
   await copyFile(resolve(root, 'time-widget', file), resolve(widgetPackage, file));
 }
-await cp(resolve(root, '..', 'component-sdk', 'src'), resolve(widgetPackage, 'sdk', 'component-sdk'), { recursive: true });
+await cp(resolve(componentSdk, 'src'), resolve(widgetPackage, 'sdk', 'component-sdk'), { recursive: true });
 await copyFile(resolve(root, 'assets', 'time-widget', 'river-sunset.jpg'), resolve(widgetPackage, 'assets', 'time-widget', 'river-sunset.jpg'));
 await replaceIn(resolve(widgetPackage, 'main.js'), [["'../sdk/", "'./sdk/"]]);
 await replaceIn(resolve(widgetPackage, 'index.html'), [["../assets/", "./assets/"]]);
@@ -55,7 +57,7 @@ await mkdir(calendarPackage, { recursive: true });
 for (const file of ['index.html', 'embedded.html', 'main.js', 'manifest.json']) {
   await copyFile(resolve(root, 'calendar-widget', file), resolve(calendarPackage, file));
 }
-await cp(resolve(root, '..', 'component-sdk', 'src'), resolve(calendarPackage, 'sdk', 'component-sdk'), { recursive: true });
+await cp(resolve(componentSdk, 'src'), resolve(calendarPackage, 'sdk', 'component-sdk'), { recursive: true });
 await copyCalendarLandscape(resolve(calendarPackage, 'assets', 'calendar-widget', 'lake-mountain.jpg'));
 await replaceIn(resolve(calendarPackage, 'main.js'), [["'../sdk/", "'./sdk/"]]);
 await replaceIn(resolve(calendarPackage, 'index.html'), [["../assets/", "./assets/"]]);
@@ -77,7 +79,7 @@ await mkdir(hostPackage, { recursive: true });
 for (const file of ['index.html', 'main.js', 'layout.js', 'manifest.json', 'project.json', 'preview.gif']) {
   await copyFile(resolve(root, 'host-wallpaper', file), resolve(hostPackage, file));
 }
-await cp(resolve(root, '..', 'host-sdk', 'dist'), resolve(hostPackage, 'sdk', 'host-sdk'), { recursive: true });
+await cp(resolve(hostSdk, 'dist'), resolve(hostPackage, 'sdk', 'host-sdk'), { recursive: true });
 await copyFile(resolve(root, 'companion', 'client.js'), resolve(hostPackage, 'companion', 'client.js'));
 await copyFile(resolve(root, 'assets', 'host-wallpaper', 'flower.webm'), resolve(hostPackage, 'assets', 'host-wallpaper', 'flower.webm'));
 try {

@@ -36,9 +36,10 @@ the checked-in MDN flower video. An optional `bgm.ogg` can be placed under
 `assets/host-wallpaper/`; without it, a tiny Web Audio fallback tone keeps
 mute/volume behavior testable.
 
-`npm run build` expects the sibling repositories `../host-sdk` and
-`../component-sdk` to be present. The build output is written to `dist/` and
-is intentionally ignored by git.
+`npm ci` installs the published BAP Host and Component SDK packages at the
+versions recorded in `package-lock.json`. The build copies those official SDK
+files into the self-contained demo and Workshop packages. The build output is
+written to `dist/` and is intentionally ignored by git.
 
 The HTTP smoke check should verify:
 

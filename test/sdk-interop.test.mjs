@@ -1,9 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { HostRuntime } from '../../host-sdk/dist/index.js';
-import { ComponentRuntime } from '../../component-sdk/src/runtime.js';
-import { PostMessageClient } from '../../component-sdk/src/post-message-client.js';
-import { BAP_PROTOCOL } from '../../component-sdk/src/protocol.js';
+import { HostRuntime } from '@backdrop-augmentation-protocol/host-sdk';
+import { BAP_PROTOCOL, ComponentRuntime, PostMessageClient } from '@backdrop-augmentation-protocol/component-sdk';
 import { readFile } from 'node:fs/promises';
 
 test('browser interop harness stays out of Workshop packages', async () => {
