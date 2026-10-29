@@ -1,6 +1,6 @@
 const PROTOCOL = { name: 'bap', version: '0.1.0', profile: 'core' };
 
-export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clientName = 'BAP Host Wallpaper Demo', clientKind = 'host', handshakeTimeoutMs = 5000 } = {}) {
+export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clientName = 'BAP Host Wallpaper Demo', clientKind = 'host', handshakeTimeoutMs = 300000 } = {}) {
   const httpBase = baseUrl.replace(/\/$/, '');
   const sessionResponse = await fetch(`${httpBase}/v1/session`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ clientName, clientKind, protocol: PROTOCOL }) });
   if (!sessionResponse.ok) throw new Error(`Companion session failed: HTTP ${sessionResponse.status}`);

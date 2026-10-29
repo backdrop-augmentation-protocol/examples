@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { createServer } from 'node:net';
+import { connect as connectPipe, createServer } from 'node:net';
+import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { once } from 'node:events';
 import { request as httpRequest } from 'node:http';
@@ -18,9 +19,9 @@ async function freePort() {
   return port;
 }
 
-async function startServer(port) {
+async function startServer(port, authorizationPipe) {
   const child = spawn('dotnet', [resolve(serverDll), '--urls', `http://127.0.0.1:${port}`], {
-    env: { ...process.env, BAP_DISCOVER_STEAM_WORKSHOP: '0' },
+    env: { ...process.env, BAP_DISCOVER_STEAM_WORKSHOP: '0', BAP_AUTHORIZATION_PIPE: authorizationPipe },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let output = '';
@@ -34,6 +35,51 @@ async function startServer(port) {
   }
   child.kill('SIGKILL');
   throw new Error(`Companion test server did not start: ${output.slice(-1200)}`);
+}
+
+function pipeCall(pipeName, request) {
+  return new Promise((resolveResponse, rejectResponse) => {
+    const client = connectPipe(`\\\\.\\pipe\\${pipeName}`);
+    let output = '';
+    client.on('connect', () => client.write(`${JSON.stringify(request)}\n`));
+    client.on('data', chunk => {
+      output += chunk.toString();
+      const end = output.indexOf('\n');
+      if (end >= 0) {
+        client.end();
+        try { resolveResponse(JSON.parse(output.slice(0, end))); } catch (error) { rejectResponse(error); }
+      }
+    });
+    client.on('error', rejectResponse);
+  });
+}
+
+async function approvePending(pipeName, permissions, timeoutMs = 5000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const snapshot = await pipeCall(pipeName, { operation: 'snapshot' });
+    if (snapshot.requests.length) {
+      const request = snapshot.requests[0];
+      const response = await pipeCall(pipeName, { operation: 'approve', sessionId: request.sessionId, permissions });
+      assert.equal(response.success, true);
+      return request;
+    }
+    await new Promise(resolveWait => setTimeout(resolveWait, 25));
+  }
+  throw new Error('No Host authorization request reached Companion in time');
+}
+
+async function denyPending(pipeName, timeoutMs = 5000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const snapshot = await pipeCall(pipeName, { operation: 'snapshot' });
+    if (snapshot.requests.length) {
+      const request = snapshot.requests[0];
+      return pipeCall(pipeName, { operation: 'deny', sessionId: request.sessionId });
+    }
+    await new Promise(resolveWait => setTimeout(resolveWait, 25));
+  }
+  throw new Error('No Host authorization request reached Companion in time');
 }
 
 async function stopServer(child) {
@@ -52,7 +98,8 @@ function socketEvent(socket, name) {
 
 test('official Host client rejects bad Companion versions and reconnects after a real server restart', { skip: !serverDll }, async () => {
   const port = await freePort();
-  let server = await startServer(port);
+  let authorizationPipe = `Bap.Companion.Test.${randomUUID().replaceAll('-', '')}`;
+  let server = await startServer(port, authorizationPipe);
   let client;
   try {
     const incompatible = await fetch(`${server.baseUrl}/v1/session`, {
@@ -62,7 +109,9 @@ test('official Host client rejects bad Companion versions and reconnects after a
     assert.equal(incompatible.status, 400);
     assert.equal((await incompatible.json()).code, 'UNSUPPORTED_VERSION');
 
+    const approval = approvePending(authorizationPipe, ['component.discovery', 'config.read', 'config.write']);
     client = await connectCompanion({ baseUrl: server.baseUrl });
+    await approval;
     assert.equal(client.hello.role, 'companion');
     assert.equal(client.hello.selectedProtocol.version, '0.1.0');
     const malformed = new WebSocket(`ws://127.0.0.1:${port}/v1/ws?token=${encodeURIComponent(client.session.accessToken)}`);
@@ -81,8 +130,11 @@ test('official Host client rejects bad Companion versions and reconnects after a
     const closed = socketEvent(client.socket, 'close');
     await Promise.all([stopServer(server.child), closed]);
 
-    server = await startServer(port);
+    authorizationPipe = `Bap.Companion.Test.${randomUUID().replaceAll('-', '')}`;
+    server = await startServer(port, authorizationPipe);
+    const restoredApproval = approvePending(authorizationPipe, ['component.discovery', 'config.read']);
     const restored = await connectCompanion({ baseUrl: server.baseUrl });
+    await restoredApproval;
     try {
       assert.notEqual(restored.session.sessionId, client.session.sessionId);
       assert.equal(restored.hello.role, 'companion');
@@ -96,7 +148,8 @@ test('official Host client rejects bad Companion versions and reconnects after a
 
 test('real Companion HTTP permissions require a live negotiated Host session', { skip: !serverDll }, async () => {
   const port = await freePort();
-  const server = await startServer(port);
+  const authorizationPipe = `Bap.Companion.Test.${randomUUID().replaceAll('-', '')}`;
+  const server = await startServer(port, authorizationPipe);
   let socket;
   try {
     const wrongHostStatus = await new Promise((resolveStatus, rejectStatus) => {
@@ -121,12 +174,16 @@ test('real Companion HTTP permissions require a live negotiated Host session', {
     socket = new WebSocket(`ws://127.0.0.1:${port}/v1/ws?token=${encodeURIComponent(session.accessToken)}`);
     await socketEvent(socket, 'open');
     const reply = socketEvent(socket, 'message');
+    const approval = approvePending(authorizationPipe, ['config.read']);
     socket.send(JSON.stringify({
       protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, kind: 'request', id: 'permission-hello',
       timestamp: new Date().toISOString(), method: 'hello',
       payload: { role: 'host', identity: { id: 'org.bap.examples.host-wallpaper', name: 'Host', version: '0.1.0' },
         protocolVersions: ['0.1.0'], capabilities: ['config'], requestedPermissions: ['config.read', 'component.discovery'] },
     }));
+    const approvalRequest = await approval;
+    assert.equal(approvalRequest.claimedIdentity.id, 'org.bap.examples.host-wallpaper');
+    assert.deepEqual(approvalRequest.requestedPermissions, ['config.read']);
     const hello = JSON.parse((await reply).data);
     assert.equal(hello.ok, true);
     assert.deepEqual(hello.result.permissions, ['config.read']);
@@ -149,6 +206,38 @@ test('real Companion HTTP permissions require a live negotiated Host session', {
       await new Promise(resolveWait => setTimeout(resolveWait, 10));
     } while (Date.now() < deadline);
     assert.equal(status, 403);
+  } finally {
+    socket?.close();
+    await stopServer(server.child);
+  }
+});
+
+test('a Host denied in Companion receives no permissions', { skip: !serverDll || process.platform !== 'win32' }, async () => {
+  const port = await freePort();
+  const authorizationPipe = `Bap.Companion.Test.${randomUUID().replaceAll('-', '')}`;
+  const server = await startServer(port, authorizationPipe);
+  let socket;
+  try {
+    const created = await fetch(`${server.baseUrl}/v1/session`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ clientName: 'denial test', clientKind: 'host', protocol: { name: 'bap', version: '0.1.0', profile: 'core' } }),
+    });
+    const session = await created.json();
+    socket = new WebSocket(`ws://127.0.0.1:${port}/v1/ws?token=${encodeURIComponent(session.accessToken)}`);
+    await socketEvent(socket, 'open');
+    const reply = socketEvent(socket, 'message');
+    const denial = denyPending(authorizationPipe);
+    socket.send(JSON.stringify({
+      protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, kind: 'request', id: 'denied-host',
+      timestamp: new Date().toISOString(), method: 'hello',
+      payload: { role: 'host', identity: { id: 'org.example.spoofed', name: 'Claimed Host', version: '1.0.0' },
+        protocolVersions: ['0.1.0'], capabilities: ['component-discovery'], requestedPermissions: ['component.discovery'] },
+    }));
+    assert.equal((await denial).success, true);
+    const response = JSON.parse((await reply).data);
+    assert.equal(response.ok, false);
+    assert.equal(response.error.code, 'APPROVAL_DENIED');
+    assert.equal((await fetch(`${server.baseUrl}/v1/components`, { headers: { authorization: `Bearer ${session.accessToken}` } })).status, 403);
   } finally {
     socket?.close();
     await stopServer(server.child);
