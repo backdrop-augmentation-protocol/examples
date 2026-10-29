@@ -52,21 +52,29 @@ test('Companion, not the Host client, enforces the pending authorization deadlin
   } finally { await stopServer(server.child); }
 });
 
-function pipeCall(pipeName, request) {
-  return new Promise((resolveResponse, rejectResponse) => {
-    const client = connectPipe(`\\\\.\\pipe\\${pipeName}`);
-    let output = '';
-    client.on('connect', () => client.write(`${JSON.stringify(request)}\n`));
-    client.on('data', chunk => {
-      output += chunk.toString();
-      const end = output.indexOf('\n');
-      if (end >= 0) {
-        client.end();
-        try { resolveResponse(JSON.parse(output.slice(0, end))); } catch (error) { rejectResponse(error); }
-      }
-    });
-    client.on('error', rejectResponse);
-  });
+async function pipeCall(pipeName, request) {
+  const deadline = Date.now() + 5000;
+  while (true) {
+    try {
+      return await new Promise((resolveResponse, rejectResponse) => {
+        const client = connectPipe(`\\\\.\\pipe\\${pipeName}`);
+        let output = '';
+        client.on('connect', () => client.write(`${JSON.stringify(request)}\n`));
+        client.on('data', chunk => {
+          output += chunk.toString();
+          const end = output.indexOf('\n');
+          if (end >= 0) {
+            client.end();
+            try { resolveResponse(JSON.parse(output.slice(0, end))); } catch (error) { rejectResponse(error); }
+          }
+        });
+        client.on('error', rejectResponse);
+      });
+    } catch (error) {
+      if (error.code !== 'ENOENT' || Date.now() >= deadline) throw error;
+      await new Promise(resolveWait => setTimeout(resolveWait, 25));
+    }
+  }
 }
 
 async function approvePending(pipeName, permissions, timeoutMs = 5000) {
