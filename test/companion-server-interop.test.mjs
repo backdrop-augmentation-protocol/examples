@@ -236,7 +236,7 @@ test('a Host denied in Companion receives no permissions', { skip: !serverDll ||
     assert.equal((await denial).success, true);
     const response = JSON.parse((await reply).data);
     assert.equal(response.ok, false);
-    assert.equal(response.error.code, 'APPROVAL_DENIED');
+    assert.equal(response.error.code, 'UNAUTHORIZED');
     assert.equal((await fetch(`${server.baseUrl}/v1/components`, { headers: { authorization: `Bearer ${session.accessToken}` } })).status, 403);
   } finally {
     socket?.close();

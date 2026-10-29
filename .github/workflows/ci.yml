@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
         with:
@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/companion
-          ref: 2c0a71cc4080896f0d09ddd8bfcb824e7d691dc8
+          ref: f0a73671b78690474ec3efea0ed5d49dba3241c1
           path: companion
       - uses: actions/setup-node@v6
         with:
