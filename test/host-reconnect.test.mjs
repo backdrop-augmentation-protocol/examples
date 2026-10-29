@@ -36,8 +36,9 @@ test('the actual Host demo reconnects to Companion after its socket closes', asy
   globalThis.window.document = globalThis.document;
   globalThis.Audio = class { loop = false; volume = 0; play = async () => {}; pause() {} };
   globalThis.setTimeout = (fn, ms, ...args) => {
-    const timer = original.setTimeout(fn, ms === 3000 ? 10 : ms, ...args);
-    if (ms === 3000) retryTimers.add(timer);
+    const retry = ms >= 2400 && ms <= 36000;
+    const timer = original.setTimeout(fn, retry ? 10 : ms, ...args);
+    if (retry) retryTimers.add(timer);
     return timer;
   };
   globalThis.setInterval = (fn, ms, ...args) => { const timer = original.setInterval(fn, ms, ...args); intervals.add(timer); refreshCallbacks.push(fn); return timer; };

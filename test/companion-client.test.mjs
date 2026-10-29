@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { connectCompanion } from '../companion/client.js';
+import { companionReconnectDelayMs, connectCompanion } from '../companion/client.js';
+
+test('Companion reconnect backoff is exponential, capped, and jittered', () => {
+  assert.equal(companionReconnectDelayMs(1, () => 0.5), 3000);
+  assert.equal(companionReconnectDelayMs(2, () => 0.5), 6000);
+  assert.equal(companionReconnectDelayMs(20, () => 0.5), 30000);
+  assert.equal(companionReconnectDelayMs(1, () => 0), 2400);
+  assert.equal(companionReconnectDelayMs(1, () => 1), 3600);
+});
 
 test('reads embedded resources without using the HTTP cache', async t => {
   const originalFetch = globalThis.fetch;
@@ -57,8 +65,8 @@ test('a dropped Companion hello rejects promptly and a fresh session can connect
     }
     close() { this.emit('close', {}); }
   };
-  await assert.rejects(connectCompanion({ handshakeTimeoutMs: 100 }), /WebSocket closed/);
-  const restored = await connectCompanion({ handshakeTimeoutMs: 100 });
+  await assert.rejects(connectCompanion(), /WebSocket closed/);
+  const restored = await connectCompanion();
   assert.equal(restored.session.sessionId, 'session-2');
   assert.equal(restored.hello.role, 'companion');
   restored.close();
@@ -97,21 +105,28 @@ test('an expired HTTP session closes its still-open socket and permits a fresh c
   restored.close();
 });
 
-test('Companion hello timeout does not leave a pending connection', async t => {
+test('Companion hello remains pending until the server responds or closes the session', async t => {
   const originalFetch = globalThis.fetch;
   const originalSocket = globalThis.WebSocket;
   t.after(() => { globalThis.fetch = originalFetch; globalThis.WebSocket = originalSocket; });
   globalThis.fetch = async () => ({ ok: true, json: async () => ({ sessionId: 'session', accessToken: 'token' }) });
-  let closed = false;
+  let socket;
   globalThis.WebSocket = class {
     listeners = new Map();
-    constructor() { queueMicrotask(() => this.listeners.get('open')?.({})); }
-    addEventListener(name, listener) { this.listeners.set(name, listener); }
-    send() {}
-    close() { closed = true; }
+    constructor() { socket = this; queueMicrotask(() => this.emit('open', {})); }
+    addEventListener(name, listener) { const set = this.listeners.get(name) || new Set(); set.add(listener); this.listeners.set(name, set); }
+    emit(name, event) { for (const listener of this.listeners.get(name) || []) listener(event); }
+    send(value) { this.request = JSON.parse(value); }
+    close() { this.emit('close', {}); }
   };
-  await assert.rejects(connectCompanion({ handshakeTimeoutMs: 10 }), /hello timed out/);
-  assert.equal(closed, true);
+  let settled = false;
+  const connecting = connectCompanion().finally(() => { settled = true; });
+  await new Promise(resolve => setTimeout(resolve, 40));
+  assert.equal(settled, false, 'the Host must not time out authorization locally');
+  socket.emit('message', { data: JSON.stringify({ correlationId: socket.request.id, ok: true, result: { selectedProtocol: socket.request.protocol, role: 'companion', capabilities: [], permissions: [] } }) });
+  const companion = await connecting;
+  assert.equal(companion.hello.role, 'companion');
+  companion.close();
 });
 
 test('malformed Companion hello response rejects instead of throwing from an event listener', async t => {
@@ -127,6 +142,6 @@ test('malformed Companion hello response rejects instead of throwing from an eve
     send() { queueMicrotask(() => this.listeners.get('message')?.({ data: '{' })); }
     close() { closed = true; }
   };
-  await assert.rejects(connectCompanion({ handshakeTimeoutMs: 100 }), /malformed WebSocket response/);
+  await assert.rejects(connectCompanion(), /malformed WebSocket response/);
   assert.equal(closed, true);
 });

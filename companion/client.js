@@ -1,6 +1,25 @@
 const PROTOCOL = { name: 'bap', version: '0.1.0', profile: 'core' };
 
-export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clientName = 'BAP Host Wallpaper Demo', clientKind = 'host', handshakeTimeoutMs = 300000 } = {}) {
+export const COMPANION_POLICY = Object.freeze({
+  componentRefreshIntervalMs: 1500,
+  reconnectInitialDelayMs: 3000,
+  reconnectMaximumDelayMs: 30000,
+  reconnectMultiplier: 2,
+  reconnectJitterRatio: 0.2,
+  reconnectResetAfterMs: 30000,
+});
+
+export function companionReconnectDelayMs(failedAttempts, random = Math.random) {
+  const attempt = Math.max(1, Math.floor(failedAttempts));
+  const base = Math.min(
+    COMPANION_POLICY.reconnectInitialDelayMs * COMPANION_POLICY.reconnectMultiplier ** (attempt - 1),
+    COMPANION_POLICY.reconnectMaximumDelayMs,
+  );
+  const jitter = (random() * 2 - 1) * COMPANION_POLICY.reconnectJitterRatio;
+  return Math.round(base * (1 + jitter));
+}
+
+export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clientName = 'BAP Host Wallpaper Demo', clientKind = 'host' } = {}) {
   const httpBase = baseUrl.replace(/\/$/, '');
   const sessionResponse = await fetch(`${httpBase}/v1/session`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ clientName, clientKind, protocol: PROTOCOL }) });
   if (!sessionResponse.ok) throw new Error(`Companion session failed: HTTP ${sessionResponse.status}`);
@@ -18,12 +37,12 @@ export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clie
     const item = pending.get(message?.correlationId);
     if (!item) return;
     pending.delete(message.correlationId); clearTimeout(item.timer);
-    if (message.ok) item.resolve(message.result); else item.reject(new Error(message.error?.message || 'Companion request failed'));
+    if (message.ok) item.resolve(message.result); else item.reject(new Error(`${message.error?.code ? `${message.error.code}: ` : ''}${message.error?.message || 'Companion request failed'}`));
   });
   let hello;
   try {
     await new Promise((resolve, reject) => { socket.addEventListener('open', resolve, { once: true }); socket.addEventListener('error', () => reject(new Error('Companion WebSocket connection failed')), { once: true }); socket.addEventListener('close', () => reject(new Error('Companion WebSocket closed before opening')), { once: true }); });
-    const request = (method, payload = {}) => { const message = { protocol: PROTOCOL, kind: 'request', id: `host-${Date.now()}-${Math.random().toString(36).slice(2)}`, timestamp: new Date().toISOString(), method, payload, sessionId: session.sessionId }; return new Promise((resolve, reject) => { if (disconnected) { reject(new Error('Companion WebSocket is disconnected')); return; } const timer = setTimeout(() => { pending.delete(message.id); reject(new Error(`Companion ${method} timed out`)); }, handshakeTimeoutMs); pending.set(message.id, { resolve, reject, timer }); try { socket.send(JSON.stringify(message)); } catch (error) { clearTimeout(timer); pending.delete(message.id); reject(error); } }); };
+    const request = (method, payload = {}) => { const message = { protocol: PROTOCOL, kind: 'request', id: `host-${Date.now()}-${Math.random().toString(36).slice(2)}`, timestamp: new Date().toISOString(), method, payload, sessionId: session.sessionId }; return new Promise((resolve, reject) => { if (disconnected) { reject(new Error('Companion WebSocket is disconnected')); return; } const timer = method === 'hello' ? undefined : setTimeout(() => { pending.delete(message.id); reject(new Error(`Companion ${method} timed out`)); }, 300000); pending.set(message.id, { resolve, reject, timer }); try { socket.send(JSON.stringify(message)); } catch (error) { if (timer) clearTimeout(timer); pending.delete(message.id); reject(error); } }); };
     hello = await request('hello', { role: 'host', identity: { id: 'org.bap.examples.host-wallpaper', name: clientName, version: '0.1.0' }, protocolVersions: ['0.1.0'], capabilities: ['component-discovery', 'config'], requestedPermissions: ['component.discovery', 'config.read', 'config.write'] });
     if (hello?.role !== 'companion' || hello.selectedProtocol?.name !== PROTOCOL.name || hello.selectedProtocol.profile !== PROTOCOL.profile || hello.selectedProtocol.version !== PROTOCOL.version) throw new Error('Companion hello acknowledgement is invalid');
   } catch (error) { socket.close(); throw error; }

@@ -55,4 +55,7 @@ npm run serve
 `dist/local-calendar-widget/`；已订阅组件会同时自动发现。宿主按当前 Companion
 预设增减组件，并按预设顺序自动布局，不打包组件副本。新生成的宿主包带有 Host
 Manifest；尚未通过编辑器更新的旧订阅示例由 Companion 的过渡映射识别。
+官方宿主遵循统一 Companion 策略：授权等待由 Companion 服务端期限控制（默认 300 秒）；
+重连从 3 秒开始指数退避，最多 30 秒并带随机抖动；连接期间每 1.5 秒刷新有效预设。
+断连会卸载嵌入式组件，但保持壁纸继续运行。
 Wallpaper Engine 壁纸的 Workshop 发布或更新一律通过官方 WE 编辑器。

@@ -1,5 +1,5 @@
 import { HostRuntime, WallpaperEngineHost } from '../sdk/host-sdk/index.js';
-import { connectCompanion } from '../companion/client.js';
+import { COMPANION_POLICY, companionReconnectDelayMs, connectCompanion } from '../companion/client.js';
 import { synchronizeComponentOrder } from './layout.js';
 
 const video = document.querySelector('#video');
@@ -10,6 +10,8 @@ const componentContainer = document.querySelector('#components');
 const hostId = 'org.bap.examples.host-wallpaper';
 const componentStates = new Map();
 let companionState = 'connecting';
+let reconnectAttempts = 0;
+let lastConnectedAt = 0;
 function showStatus() {
   const states = [...componentStates].map(([id, state]) => `${id}: ${state}`).join('; ');
   companionStatus.textContent = `Companion: ${companionState}; ${states}`;
@@ -71,13 +73,15 @@ async function connectToCompanion() {
   function reconnect() {
     if (reconnectScheduled) return;
     reconnectScheduled = true;
+    if (lastConnectedAt && Date.now() - lastConnectedAt >= COMPANION_POLICY.reconnectResetAfterMs) reconnectAttempts = 0;
+    const delay = companionReconnectDelayMs(++reconnectAttempts);
     clearInterval(refreshTimer);
     for (const id of mountedComponents.keys()) host.unmount(id);
     mountedComponents.clear();
     companionState = 'offline; reconnecting';
     componentStates.clear();
     showStatus();
-    setTimeout(connectToCompanion, 3000);
+    setTimeout(connectToCompanion, delay);
   }
   async function refresh() {
     if (refreshing || reconnectScheduled) return;
@@ -121,10 +125,11 @@ async function connectToCompanion() {
     companion = await connectCompanion();
     companion.socket.addEventListener('close', reconnect, { once: true });
     if (reconnectScheduled) return;
+    lastConnectedAt = Date.now();
     companionState = 'connected';
     showStatus();
     await refresh();
-    refreshTimer = setInterval(refresh, 1500);
+    refreshTimer = setInterval(refresh, COMPANION_POLICY.componentRefreshIntervalMs);
   } catch (error) {
     companion?.close();
     reconnect();

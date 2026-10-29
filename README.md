@@ -82,5 +82,10 @@ components without an embedded copy, and auto-arranges them in preset order.
 The generated Host package now carries a Host Manifest; an older subscribed
 demo without that file remains recognizable through the Companion's legacy
 example mapping until it is updated through the editor.
+The official Host follows the shared Companion policy: authorization waits for
+the Companion's server-side deadline (300 seconds by default); reconnect uses
+3-second exponential backoff up to 30 seconds with jitter, and the effective
+preset refreshes every 1.5 seconds while connected. Disconnect unmounts the
+embedded widgets but leaves the wallpaper running.
 Any Workshop publication or update of Wallpaper Engine wallpapers must use the
 official WE editor.

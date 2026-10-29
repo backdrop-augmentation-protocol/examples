@@ -19,9 +19,9 @@ async function freePort() {
   return port;
 }
 
-async function startServer(port, authorizationPipe) {
+async function startServer(port, authorizationPipe, approvalTimeoutMs) {
   const child = spawn('dotnet', [resolve(serverDll), '--urls', `http://127.0.0.1:${port}`], {
-    env: { ...process.env, BAP_DISCOVER_STEAM_WORKSHOP: '0', BAP_AUTHORIZATION_PIPE: authorizationPipe },
+    env: { ...process.env, BAP_DISCOVER_STEAM_WORKSHOP: '0', BAP_AUTHORIZATION_PIPE: authorizationPipe, ...(approvalTimeoutMs ? { BAP_APPROVAL_TIMEOUT_MS: String(approvalTimeoutMs) } : {}) },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let output = '';
@@ -36,6 +36,21 @@ async function startServer(port, authorizationPipe) {
   child.kill('SIGKILL');
   throw new Error(`Companion test server did not start: ${output.slice(-1200)}`);
 }
+
+test('Companion, not the Host client, enforces the pending authorization deadline', { skip: !serverDll }, async () => {
+  const port = await freePort();
+  const authorizationPipe = `Bap.Companion.Test.${randomUUID().replaceAll('-', '')}`;
+  const server = await startServer(port, authorizationPipe, 6000);
+  const startedAt = Date.now();
+  try {
+    let settled = false;
+    const pending = connectCompanion({ baseUrl: server.baseUrl }).finally(() => { settled = true; });
+    await new Promise(resolveWait => setTimeout(resolveWait, 5200));
+    assert.equal(settled, false, 'the Host client must not use the old 5-second local authorization timeout');
+    await assert.rejects(pending, /TIMEOUT: Host approval was not completed in time/);
+    assert.ok(Date.now() - startedAt >= 5500, 'the Host client must wait for the configured Companion deadline');
+  } finally { await stopServer(server.child); }
+});
 
 function pipeCall(pipeName, request) {
   return new Promise((resolveResponse, rejectResponse) => {
