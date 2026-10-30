@@ -93,6 +93,17 @@ await replaceIn(resolve(hostPackage, 'main.js'), [
   ["'../companion/", "'./companion/"],
   ["'../assets/", "'./assets/"],
 ]);
+
+// Local-only diagnostic overlay for investigating Host lifecycle/reconnect
+// behavior. Keep the opt-in flag out of the uploadable Workshop package.
+const diagnosticHostPackage = resolve(dist, 'diagnostic-host-wallpaper');
+await mkdir(diagnosticHostPackage, { recursive: true });
+for (const file of ['main.js']) {
+  const content = await readFile(resolve(hostPackage, file), 'utf8');
+  await writeFile(resolve(diagnosticHostPackage, file), `globalThis.__BAP_ENABLE_DIAGNOSTICS__ = true;\n${content}`);
+}
+await copyFile(resolve(hostPackage, 'companion', 'client.js'), resolve(diagnosticHostPackage, 'companion', 'client.js'));
+
 await validateWorkshopPackage(widgetPackage);
 await validateWorkshopPackage(hostPackage);
 await validateWorkshopPackage(workshopCalendar);

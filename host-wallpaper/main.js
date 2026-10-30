@@ -8,15 +8,21 @@ const toggle = document.querySelector('#toggle');
 const companionStatus = document.querySelector('#companion-status');
 const componentContainer = document.querySelector('#components');
 const hostId = 'org.bap.examples.host-wallpaper';
-const hostPageInstanceId = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`).replaceAll('-', '');
+const diagnosticsEnabled = globalThis.__BAP_ENABLE_DIAGNOSTICS__ === true;
+const hostPageInstanceId = diagnosticsEnabled
+  ? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`).replaceAll('-', '')
+  : null;
 function diagnostic(event, details = {}) {
+  if (!diagnosticsEnabled) return;
   console.info('[BAP-DIAG]', JSON.stringify({ event, at: new Date().toISOString(), pageInstanceId: hostPageInstanceId, href: globalThis.location?.href ?? null, ...details }));
 }
 let activeDiagnosticReporter = null;
-diagnostic('page-start', { visibility: document.visibilityState, referrer: document.referrer });
-window.addEventListener('pagehide', event => { diagnostic('pagehide', { persisted: event.persisted }); activeDiagnosticReporter?.('pagehide', { persisted: event.persisted }); });
-window.addEventListener('pageshow', event => { diagnostic('pageshow', { persisted: event.persisted }); activeDiagnosticReporter?.('pageshow', { persisted: event.persisted }); });
-document.addEventListener?.('visibilitychange', () => { diagnostic('visibility-change', { visibility: document.visibilityState }); activeDiagnosticReporter?.('visibility-change', { visibility: document.visibilityState }); });
+if (diagnosticsEnabled) {
+  diagnostic('page-start', { visibility: document.visibilityState, referrer: document.referrer });
+  window.addEventListener('pagehide', event => { diagnostic('pagehide', { persisted: event.persisted }); activeDiagnosticReporter?.('pagehide', { persisted: event.persisted }); });
+  window.addEventListener('pageshow', event => { diagnostic('pageshow', { persisted: event.persisted }); activeDiagnosticReporter?.('pageshow', { persisted: event.persisted }); });
+  document.addEventListener?.('visibilitychange', () => { diagnostic('visibility-change', { visibility: document.visibilityState }); activeDiagnosticReporter?.('visibility-change', { visibility: document.visibilityState }); });
+}
 const componentStates = new Map();
 let companionState = 'connecting';
 let reconnectAttempts = 0;
@@ -86,7 +92,7 @@ async function connectToCompanion() {
     if (lastConnectedAt && Date.now() - lastConnectedAt >= COMPANION_POLICY.reconnectResetAfterMs) reconnectAttempts = 0;
     const delay = companionReconnectDelayMs(++reconnectAttempts);
     diagnostic('reconnect-scheduled', { reason, attempt: reconnectAttempts, delayMs: delay, lastConnectedAt: lastConnectedAt ? new Date(lastConnectedAt).toISOString() : null });
-    companion?.reportDiagnostic('reconnect-scheduled', { reason, attempt: reconnectAttempts, delayMs: delay, lastConnectedAt: lastConnectedAt ? new Date(lastConnectedAt).toISOString() : null });
+    if (diagnosticsEnabled) companion?.reportDiagnostic('reconnect-scheduled', { reason, attempt: reconnectAttempts, delayMs: delay, lastConnectedAt: lastConnectedAt ? new Date(lastConnectedAt).toISOString() : null });
     clearInterval(refreshTimer);
     for (const id of mountedComponents.keys()) host.unmount(id);
     mountedComponents.clear();
@@ -134,11 +140,11 @@ async function connectToCompanion() {
     finally { refreshing = false; }
   }
   try {
-    companion = await connectCompanion({
+    companion = await connectCompanion(diagnosticsEnabled ? {
       diagnosticInstanceId: hostPageInstanceId,
       onDiagnostic: entry => diagnostic(entry.event, entry),
-    });
-    activeDiagnosticReporter = (event, details) => companion.reportDiagnostic(event, details);
+    } : undefined);
+    if (diagnosticsEnabled) activeDiagnosticReporter = (event, details) => companion.reportDiagnostic(event, details);
     companion.socket.addEventListener('close', event => reconnect(`websocket-close:${event.code}:${event.reason || 'no-reason'}`), { once: true });
     if (reconnectScheduled) return;
     lastConnectedAt = Date.now();

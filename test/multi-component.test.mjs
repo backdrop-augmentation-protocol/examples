@@ -48,6 +48,15 @@ test('unchanged preset order never reparents mounted component iframes', () => {
   assert.equal(container.appendCount, changedCount);
 });
 
+test('diagnostic instrumentation is opt-in and excluded from Workshop host package', async () => {
+  const workshopMain = await readFile(new URL('../dist/workshop-host-wallpaper/main.js', import.meta.url), 'utf8');
+  const diagnosticMain = await readFile(new URL('../dist/diagnostic-host-wallpaper/main.js', import.meta.url), 'utf8');
+  const diagnosticClient = await readFile(new URL('../dist/diagnostic-host-wallpaper/companion/client.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(workshopMain, /__BAP_ENABLE_DIAGNOSTICS__\s*=\s*true/);
+  assert.match(diagnosticMain, /^globalThis\.__BAP_ENABLE_DIAGNOSTICS__ = true;/);
+  assert.match(diagnosticClient, /\/v1\/diagnostics/);
+});
+
 test('local calendar exposes the same collapsible grid in both modes', async () => {
   const standalone = await readFile(new URL('../dist/local-calendar-widget/index.html', import.meta.url), 'utf8');
   const embedded = await readFile(new URL('../dist/local-calendar-widget/embedded.html', import.meta.url), 'utf8');
