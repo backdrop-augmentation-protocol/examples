@@ -19,6 +19,7 @@ test('reads embedded resources without using the HTTP cache', async t => {
   globalThis.fetch = async (url, options) => {
     requests.push({ url, options });
     if (url.endsWith('/v1/session')) return { ok: true, json: async () => ({ sessionId: 'test-session', accessToken: 'test-token' }) };
+    if (url.endsWith('/v1/diagnostics')) return { ok: true };
     if (url.includes('/resources/')) return { ok: true, blob: async () => new Blob(['<p>clock</p>']) };
     throw new Error(`Unexpected request: ${url}`);
   };
@@ -39,6 +40,9 @@ test('reads embedded resources without using the HTTP cache', async t => {
   const fetchRequest = requests.find(item => item.url.includes('/resources/'));
   const sessionRequest = requests.find(item => item.url.endsWith('/v1/session'));
   assert.equal(sessionRequest.options.headers['X-BAP-Diagnostic-Instance'], 'a'.repeat(32));
+  const diagnosticRequest = requests.find(item => item.url.endsWith('/v1/diagnostics'));
+  assert.equal(diagnosticRequest.options.headers.authorization, 'Bearer test-token');
+  assert.equal(JSON.parse(diagnosticRequest.options.body).pageInstanceId, 'a'.repeat(32));
   assert.deepEqual(diagnostics.map(entry => entry.event), ['session-created', 'hello-sending', 'hello-accepted']);
   assert.equal(fetchRequest.options.cache, 'no-store');
   assert.equal(fetchRequest.options.headers.authorization, 'Bearer test-token');

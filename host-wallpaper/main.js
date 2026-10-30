@@ -12,10 +12,11 @@ const hostPageInstanceId = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-
 function diagnostic(event, details = {}) {
   console.info('[BAP-DIAG]', JSON.stringify({ event, at: new Date().toISOString(), pageInstanceId: hostPageInstanceId, href: globalThis.location?.href ?? null, ...details }));
 }
+let activeDiagnosticReporter = null;
 diagnostic('page-start', { visibility: document.visibilityState, referrer: document.referrer });
-window.addEventListener('pagehide', event => diagnostic('pagehide', { persisted: event.persisted }));
-window.addEventListener('pageshow', event => diagnostic('pageshow', { persisted: event.persisted }));
-document.addEventListener?.('visibilitychange', () => diagnostic('visibility-change', { visibility: document.visibilityState }));
+window.addEventListener('pagehide', event => { diagnostic('pagehide', { persisted: event.persisted }); activeDiagnosticReporter?.('pagehide', { persisted: event.persisted }); });
+window.addEventListener('pageshow', event => { diagnostic('pageshow', { persisted: event.persisted }); activeDiagnosticReporter?.('pageshow', { persisted: event.persisted }); });
+document.addEventListener?.('visibilitychange', () => { diagnostic('visibility-change', { visibility: document.visibilityState }); activeDiagnosticReporter?.('visibility-change', { visibility: document.visibilityState }); });
 const componentStates = new Map();
 let companionState = 'connecting';
 let reconnectAttempts = 0;
@@ -85,6 +86,7 @@ async function connectToCompanion() {
     if (lastConnectedAt && Date.now() - lastConnectedAt >= COMPANION_POLICY.reconnectResetAfterMs) reconnectAttempts = 0;
     const delay = companionReconnectDelayMs(++reconnectAttempts);
     diagnostic('reconnect-scheduled', { reason, attempt: reconnectAttempts, delayMs: delay, lastConnectedAt: lastConnectedAt ? new Date(lastConnectedAt).toISOString() : null });
+    companion?.reportDiagnostic('reconnect-scheduled', { reason, attempt: reconnectAttempts, delayMs: delay, lastConnectedAt: lastConnectedAt ? new Date(lastConnectedAt).toISOString() : null });
     clearInterval(refreshTimer);
     for (const id of mountedComponents.keys()) host.unmount(id);
     mountedComponents.clear();
@@ -136,6 +138,7 @@ async function connectToCompanion() {
       diagnosticInstanceId: hostPageInstanceId,
       onDiagnostic: entry => diagnostic(entry.event, entry),
     });
+    activeDiagnosticReporter = (event, details) => companion.reportDiagnostic(event, details);
     companion.socket.addEventListener('close', event => reconnect(`websocket-close:${event.code}:${event.reason || 'no-reason'}`), { once: true });
     if (reconnectScheduled) return;
     lastConnectedAt = Date.now();

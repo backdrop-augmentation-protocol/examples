@@ -21,12 +21,25 @@ export function companionReconnectDelayMs(failedAttempts, random = Math.random) 
 
 export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clientName = 'BAP Host Wallpaper Demo', clientKind = 'host', diagnosticInstanceId, onDiagnostic } = {}) {
   const httpBase = baseUrl.replace(/\/$/, '');
-  const report = (event, details = {}) => onDiagnostic?.({ event, at: new Date().toISOString(), ...details });
+  let session;
+  const report = (event, details = {}) => {
+    const entry = { event, at: new Date().toISOString(), pageInstanceId: diagnosticInstanceId, ...details };
+    try { onDiagnostic?.(entry); } catch { /* Diagnostics must never interfere with Host behavior. */ }
+    if (diagnosticInstanceId && session?.accessToken) {
+      void fetch(`${httpBase}/v1/diagnostics`, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${session.accessToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify(entry),
+        keepalive: true,
+        cache: 'no-store',
+      }).catch(() => {});
+    }
+  };
   const headers = { 'content-type': 'application/json' };
   if (diagnosticInstanceId) headers['X-BAP-Diagnostic-Instance'] = diagnosticInstanceId;
   const sessionResponse = await fetch(`${httpBase}/v1/session`, { method: 'POST', headers, body: JSON.stringify({ clientName, clientKind, protocol: PROTOCOL }) });
   if (!sessionResponse.ok) throw new Error(`Companion session failed: HTTP ${sessionResponse.status}`);
-  const session = await sessionResponse.json();
+  session = await sessionResponse.json();
   report('session-created', { sessionId: session.sessionId, diagnosticInstanceId });
   const socket = new WebSocket(`${httpBase.replace(/^http/, 'ws')}/v1/ws?token=${encodeURIComponent(session.accessToken)}`);
   const pending = new Map();
@@ -69,6 +82,7 @@ export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clie
     session,
     hello,
     socket,
+    reportDiagnostic(event, details = {}) { report(event, { sessionId: session.sessionId, ...details }); },
     listComponents() { return readJson('/v1/components', 'Companion component discovery failed'); },
     listEffectiveComponents(hostId) { return readJson(`/v1/hosts/${encodeURIComponent(hostId)}/components`, 'Companion preset read failed'); },
     getComponentManifest(id) { return readJson(`/v1/components/${encodeURIComponent(id)}/manifest`, 'Companion manifest read failed'); },
