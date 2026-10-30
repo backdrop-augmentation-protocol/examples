@@ -14,6 +14,7 @@ test('reads embedded resources without using the HTTP cache', async t => {
   const originalFetch = globalThis.fetch;
   const originalSocket = globalThis.WebSocket;
   const requests = [];
+  const diagnostics = [];
   t.after(() => { globalThis.fetch = originalFetch; globalThis.WebSocket = originalSocket; });
   globalThis.fetch = async (url, options) => {
     requests.push({ url, options });
@@ -32,10 +33,13 @@ test('reads embedded resources without using the HTTP cache', async t => {
     }
     close() {}
   };
-  const companion = await connectCompanion();
+  const companion = await connectCompanion({ diagnosticInstanceId: 'a'.repeat(32), onDiagnostic: entry => diagnostics.push(entry) });
   const resource = await companion.fetchCatalogResource('workshop:123', './embedded.html');
   assert.equal(await resource.text(), '<p>clock</p>');
   const fetchRequest = requests.find(item => item.url.includes('/resources/'));
+  const sessionRequest = requests.find(item => item.url.endsWith('/v1/session'));
+  assert.equal(sessionRequest.options.headers['X-BAP-Diagnostic-Instance'], 'a'.repeat(32));
+  assert.deepEqual(diagnostics.map(entry => entry.event), ['session-created', 'hello-sending', 'hello-accepted']);
   assert.equal(fetchRequest.options.cache, 'no-store');
   assert.equal(fetchRequest.options.headers.authorization, 'Bearer test-token');
   assert.match(fetchRequest.url, /workshop%3A123\/resources\/embedded\.html$/);

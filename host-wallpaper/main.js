@@ -8,6 +8,14 @@ const toggle = document.querySelector('#toggle');
 const companionStatus = document.querySelector('#companion-status');
 const componentContainer = document.querySelector('#components');
 const hostId = 'org.bap.examples.host-wallpaper';
+const hostPageInstanceId = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`).replaceAll('-', '');
+function diagnostic(event, details = {}) {
+  console.info('[BAP-DIAG]', JSON.stringify({ event, at: new Date().toISOString(), pageInstanceId: hostPageInstanceId, href: globalThis.location?.href ?? null, ...details }));
+}
+diagnostic('page-start', { visibility: document.visibilityState, referrer: document.referrer });
+window.addEventListener('pagehide', event => diagnostic('pagehide', { persisted: event.persisted }));
+window.addEventListener('pageshow', event => diagnostic('pageshow', { persisted: event.persisted }));
+document.addEventListener?.('visibilitychange', () => diagnostic('visibility-change', { visibility: document.visibilityState }));
 const componentStates = new Map();
 let companionState = 'connecting';
 let reconnectAttempts = 0;
@@ -66,15 +74,17 @@ window.addEventListener('resize', () => {
 });
 
 async function connectToCompanion() {
+  diagnostic('connect-attempt', { attempt: reconnectAttempts + 1 });
   let companion;
   let reconnectScheduled = false;
   let refreshTimer;
   let refreshing = false;
-  function reconnect() {
+  function reconnect(reason) {
     if (reconnectScheduled) return;
     reconnectScheduled = true;
     if (lastConnectedAt && Date.now() - lastConnectedAt >= COMPANION_POLICY.reconnectResetAfterMs) reconnectAttempts = 0;
     const delay = companionReconnectDelayMs(++reconnectAttempts);
+    diagnostic('reconnect-scheduled', { reason, attempt: reconnectAttempts, delayMs: delay, lastConnectedAt: lastConnectedAt ? new Date(lastConnectedAt).toISOString() : null });
     clearInterval(refreshTimer);
     for (const id of mountedComponents.keys()) host.unmount(id);
     mountedComponents.clear();
@@ -122,8 +132,11 @@ async function connectToCompanion() {
     finally { refreshing = false; }
   }
   try {
-    companion = await connectCompanion();
-    companion.socket.addEventListener('close', reconnect, { once: true });
+    companion = await connectCompanion({
+      diagnosticInstanceId: hostPageInstanceId,
+      onDiagnostic: entry => diagnostic(entry.event, entry),
+    });
+    companion.socket.addEventListener('close', event => reconnect(`websocket-close:${event.code}:${event.reason || 'no-reason'}`), { once: true });
     if (reconnectScheduled) return;
     lastConnectedAt = Date.now();
     companionState = 'connected';
@@ -132,7 +145,7 @@ async function connectToCompanion() {
     refreshTimer = setInterval(refresh, COMPANION_POLICY.componentRefreshIntervalMs);
   } catch (error) {
     companion?.close();
-    reconnect();
+    reconnect(`connect-error:${error instanceof Error ? error.message : String(error)}`);
     console.warn('BAP Companion unavailable', error);
   }
 }

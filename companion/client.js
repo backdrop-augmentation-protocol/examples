@@ -19,17 +19,22 @@ export function companionReconnectDelayMs(failedAttempts, random = Math.random) 
   return Math.round(base * (1 + jitter));
 }
 
-export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clientName = 'BAP Host Wallpaper Demo', clientKind = 'host' } = {}) {
+export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clientName = 'BAP Host Wallpaper Demo', clientKind = 'host', diagnosticInstanceId, onDiagnostic } = {}) {
   const httpBase = baseUrl.replace(/\/$/, '');
-  const sessionResponse = await fetch(`${httpBase}/v1/session`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ clientName, clientKind, protocol: PROTOCOL }) });
+  const report = (event, details = {}) => onDiagnostic?.({ event, at: new Date().toISOString(), ...details });
+  const headers = { 'content-type': 'application/json' };
+  if (diagnosticInstanceId) headers['X-BAP-Diagnostic-Instance'] = diagnosticInstanceId;
+  const sessionResponse = await fetch(`${httpBase}/v1/session`, { method: 'POST', headers, body: JSON.stringify({ clientName, clientKind, protocol: PROTOCOL }) });
   if (!sessionResponse.ok) throw new Error(`Companion session failed: HTTP ${sessionResponse.status}`);
   const session = await sessionResponse.json();
+  report('session-created', { sessionId: session.sessionId, diagnosticInstanceId });
   const socket = new WebSocket(`${httpBase.replace(/^http/, 'ws')}/v1/ws?token=${encodeURIComponent(session.accessToken)}`);
   const pending = new Map();
   let disconnected = false;
   const rejectPending = (message) => { disconnected = true; for (const item of pending.values()) { clearTimeout(item.timer); item.reject(new Error(message)); } pending.clear(); };
-  socket.addEventListener('close', () => rejectPending('Companion WebSocket closed'));
-  socket.addEventListener('error', () => rejectPending('Companion WebSocket connection failed'));
+  socket.addEventListener('open', () => report('websocket-open', { sessionId: session.sessionId }));
+  socket.addEventListener('close', (event) => { report('websocket-close', { sessionId: session.sessionId, code: event.code, reason: event.reason, wasClean: event.wasClean, readyState: socket.readyState }); rejectPending('Companion WebSocket closed'); });
+  socket.addEventListener('error', (event) => { report('websocket-error', { sessionId: session.sessionId, message: event.message || 'WebSocket error', readyState: socket.readyState }); rejectPending('Companion WebSocket connection failed'); });
   socket.addEventListener('message', (event) => {
     let message;
     try { message = JSON.parse(event.data); }
@@ -42,15 +47,18 @@ export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clie
   let hello;
   try {
     await new Promise((resolve, reject) => { socket.addEventListener('open', resolve, { once: true }); socket.addEventListener('error', () => reject(new Error('Companion WebSocket connection failed')), { once: true }); socket.addEventListener('close', () => reject(new Error('Companion WebSocket closed before opening')), { once: true }); });
+    report('hello-sending', { sessionId: session.sessionId });
     const request = (method, payload = {}) => { const message = { protocol: PROTOCOL, kind: 'request', id: `host-${Date.now()}-${Math.random().toString(36).slice(2)}`, timestamp: new Date().toISOString(), method, payload, sessionId: session.sessionId }; return new Promise((resolve, reject) => { if (disconnected) { reject(new Error('Companion WebSocket is disconnected')); return; } const timer = method === 'hello' ? undefined : setTimeout(() => { pending.delete(message.id); reject(new Error(`Companion ${method} timed out`)); }, 300000); pending.set(message.id, { resolve, reject, timer }); try { socket.send(JSON.stringify(message)); } catch (error) { if (timer) clearTimeout(timer); pending.delete(message.id); reject(error); } }); };
     hello = await request('hello', { role: 'host', identity: { id: 'org.bap.examples.host-wallpaper', name: clientName, version: '0.1.0' }, protocolVersions: ['0.1.0'], capabilities: ['component-discovery', 'config'], requestedPermissions: ['component.discovery', 'config.read', 'config.write'] });
     if (hello?.role !== 'companion' || hello.selectedProtocol?.name !== PROTOCOL.name || hello.selectedProtocol.profile !== PROTOCOL.profile || hello.selectedProtocol.version !== PROTOCOL.version) throw new Error('Companion hello acknowledgement is invalid');
-  } catch (error) { socket.close(); throw error; }
+    report('hello-accepted', { sessionId: session.sessionId, protocol: hello.selectedProtocol });
+  } catch (error) { report('connect-failed', { sessionId: session.sessionId, message: error instanceof Error ? error.message : String(error), readyState: socket.readyState }); socket.close(); throw error; }
   const authFetch = async (path, options = {}) => {
     const response = await fetch(`${httpBase}${path}`, { ...options, headers: { authorization: `Bearer ${session.accessToken}`, ...(options.headers || {}) } });
     // A session can expire while its WebSocket remains open. Closing the socket
     // lets the Host's existing reconnect path obtain a fresh session.
     if (response.status === 401) {
+      report('http-unauthorized-closing-socket', { sessionId: session.sessionId, path });
       socket.close();
       throw new Error('Companion session expired: HTTP 401');
     }
