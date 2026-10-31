@@ -20,7 +20,8 @@ class FakeWindow {
 function createInterop(behaviors = [], handshakeTimeoutMs = 1000) {
   const hostWindow = new FakeWindow();
   const frames = [];
-  const document = { baseURI: 'https://host.test/', createElement() {
+  const document = { baseURI: 'https://host.test/', createElement(name) {
+    if (name === 'div') return { style: {}, children: [], appendChild(child) { this.children.push(child); }, remove() { this.removed = true; } };
     const behavior = behaviors[frames.length] || {};
     const componentWindow = new FakeWindow();
     const iframe = { style: {}, listeners: new Map(), setAttribute() {}, addEventListener(name, listener) { this.listeners.set(name, listener); }, remove() { this.removed = true; } };
@@ -32,13 +33,15 @@ function createInterop(behaviors = [], handshakeTimeoutMs = 1000) {
     } };
     const manifest = { protocol: BAP_PROTOCOL, id: `example.widget-${frames.length}`, name: 'Widget', version: '0.1.0', role: 'component', capabilities: ['lifecycle'], modes: ['standalone', 'embedded'], entrypoints: { default: 'index.html', standalone: 'index.html', embedded: 'embedded.html' } };
     const client = new PostMessageClient({ target: parent, targetOrigin: '*', receiveWindow: componentWindow });
-    const runtime = new ComponentRuntime({ manifest, mode: 'embedded', client });
+    const runtime = new ComponentRuntime({ manifest, mode: 'embedded', client,
+      extensions: [{ id: 'org.bap.component-config', versions: ['0.1.0'] }] });
     frames.push({ iframe, runtime, client });
     return iframe;
   } };
-  const host = new HostRuntime({ window: hostWindow, document, handshakeTimeoutMs });
+  const host = new HostRuntime({ window: hostWindow, document, handshakeTimeoutMs,
+    extensions: [{ id: 'org.bap.component-config', versions: ['0.1.0'] }] });
   const container = { appendChild() {} };
-  const mount = (id) => host.mount({ id, srcdoc: '<p>Widget</p>', container });
+  const mount = (id, options = {}) => host.mount({ instanceId: id, componentId: id, srcdoc: '<p>Widget</p>', container, ...options });
   const startFrames = async () => { for (const { iframe, runtime } of frames) { await runtime.start(); iframe.listeners.get('load')(); } };
   const close = () => { host.destroy(); frames.forEach(frame => frame.client.close()); };
   return { host, frames, mount, startFrames, close };
@@ -68,6 +71,23 @@ test('two official SDK components complete independent Host-driven sessions', as
   host.unmount('clock');
   assert.equal(handles[0].state, 'stopped');
   assert.equal(handles[1].state, 'running');
+  close();
+});
+
+test('preset config snapshots update only the matching repeated component instance', async () => {
+  const { host, frames, mount, startFrames, close } = createInterop();
+  const first = mount('clock-a', { componentId: 'org.example.clock', config: { text: 'first' }, configRevision: 1 });
+  const second = mount('clock-b', { componentId: 'org.example.clock', config: { text: 'second' }, configRevision: 1 });
+  const received = [[], []];
+  frames[0].runtime.onConfigChange(config => received[0].push(config));
+  frames[1].runtime.onConfigChange(config => received[1].push(config));
+  await startFrames();
+  await waitFor(() => received[0].length > 0 && received[1].length > 0);
+  assert.deepEqual(frames.map(frame => frame.runtime.getConfig('text')), ['first', 'second']);
+  assert.equal(host.updateConfig('clock-a', { text: 'updated' }, 2), true);
+  await waitFor(() => frames[0].runtime.getConfig('text') === 'updated');
+  assert.equal(frames[1].runtime.getConfig('text'), 'second');
+  assert.ok(first && second);
   close();
 });
 

@@ -4,7 +4,8 @@ import { PostMessageClient } from '../sdk/component-sdk/post-message-client.js';
 const embedded = window.parent !== window;
 const manifest = { protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, id: 'org.bap.examples.calendar-widget', name: 'BAP Calendar Widget Demo', version: '0.1.0', implementationVersion: '0.1.0', role: 'component', capabilities: ['lifecycle', 'config'], permissions: [], modes: ['standalone', 'embedded'], entrypoints: { default: './index.html', standalone: './index.html', embedded: './embedded.html' }, configScopes: ['global', 'wallpaper'], description: 'Open-license demo calendar widget' };
 const client = embedded ? new PostMessageClient({ target: window.parent, targetOrigin: '*', receiveWindow: window }) : null;
-const runtime = new ComponentRuntime({ manifest, mode: embedded ? 'embedded' : 'standalone', client, config: { locale: 'en-US' } });
+const runtime = new ComponentRuntime({ manifest, mode: embedded ? 'embedded' : 'standalone', client, config: { locale: 'en-US' },
+  extensions: [{ id: 'org.bap.component-config', versions: ['0.1.0'] }] });
 const month = document.querySelector('#month');
 const year = document.querySelector('#year');
 const grid = document.querySelector('#grid');
@@ -20,6 +21,9 @@ toggle.addEventListener('click', () => {
 
 
 function render() {
+  const channels = String(runtime.getConfig('schemecolor') ?? '').split(/\s+/).map(Number);
+  if (channels.length === 3 && channels.every(value => Number.isFinite(value) && value >= 0 && value <= 1))
+    document.documentElement.style.setProperty('--bap-scheme-color', `rgb(${channels.map(value => Math.round(value * 255)).join(' ')})`);
   const now = new Date();
   const locale = runtime.getConfig('locale') || 'en-US';
   month.textContent = new Intl.DateTimeFormat(locale, { month: 'long' }).format(now);

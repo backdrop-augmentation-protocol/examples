@@ -49,24 +49,30 @@ const host = new HostRuntime({
   implementationName: 'BAP Host Wallpaper Demo',
   implementationVersion: '0.1.0',
   capabilities: ['lifecycle', 'size', 'pause-resume', 'config'],
+  extensions: [{ id: 'org.bap.component-config', versions: ['0.1.0'] }],
 });
 const mountedComponents = new Map();
 function mountComponent(definition, srcdoc) {
-  const { componentId: id, sourceKey } = definition;
+  const { instanceId, componentId, sourceKey } = definition;
   const container = document.createElement('div');
   container.className = 'component';
-  container.dataset.componentId = id;
+  container.dataset.componentId = componentId;
+  container.dataset.instanceId = instanceId;
   componentContainer.appendChild(container);
   const component = host.mount({
-    id,
+    instanceId,
+    componentId,
+    sourceKey,
     srcdoc,
     container,
     size: { width: container.clientWidth, height: container.clientHeight },
+    config: definition.config ?? {},
+    configRevision: definition.configRevision ?? 0,
   });
-  mountedComponents.set(id, { component, container, sourceKey });
-  component.on('ready', () => setComponentState(id, 'running'));
-  component.on('fault', (fault) => { setComponentState(id, 'unavailable'); console.warn(`BAP component ${id} unavailable; host continues`, JSON.stringify(fault)); });
-  component.on('stopped', () => { if (mountedComponents.get(id)?.component === component) mountedComponents.delete(id); container.remove(); });
+  mountedComponents.set(instanceId, { component, container, sourceKey, config: JSON.stringify(definition.config ?? {}), configRevision: definition.configRevision ?? 0 });
+  component.on('ready', () => setComponentState(instanceId, 'running'));
+  component.on('fault', (fault) => { setComponentState(instanceId, 'unavailable'); console.warn(`BAP component ${componentId} (${instanceId}) unavailable; host continues`, JSON.stringify(fault)); });
+  component.on('stopped', () => { if (mountedComponents.get(instanceId)?.component === component) mountedComponents.delete(instanceId); container.remove(); });
 }
 const adapter = {
   // Auto-layout containers are measured per component below.
@@ -107,34 +113,40 @@ async function connectToCompanion() {
     try {
       const selected = await companion.listEffectiveComponents(hostId);
       if (reconnectScheduled) return;
-      const desired = new Set(selected.filter(item => item.status === 'available').map(item => item.componentId));
-      for (const id of mountedComponents.keys()) {
-        const record = mountedComponents.get(id);
-        const next = selected.find(item => item.componentId === id);
-        if (!desired.has(id) || next?.sourceKey !== record.sourceKey) host.unmount(id);
+      const desired = new Set(selected.filter(item => item.status === 'available').map(item => item.instanceId));
+      for (const instanceId of mountedComponents.keys()) {
+        const record = mountedComponents.get(instanceId);
+        const next = selected.find(item => item.instanceId === instanceId);
+        if (!desired.has(instanceId) || next?.sourceKey !== record.sourceKey) host.unmount(instanceId);
       }
       const orderedContainers = [];
       for (const item of selected) {
-        if (item.status !== 'available') { setComponentState(item.componentId, item.status); continue; }
-        if (!mountedComponents.has(item.componentId)) {
+        const instanceId = item.instanceId;
+        if (item.status !== 'available') { setComponentState(instanceId, item.status); continue; }
+        if (!mountedComponents.has(instanceId)) {
           try {
             const embedded = await companion.fetchCatalogResource(item.sourceKey, item.embeddedPath);
             if (embedded.size > 1024 * 1024) throw new Error('Embedded component exceeds the 1 MiB demo limit');
             const srcdoc = await embedded.text();
             if (reconnectScheduled) return;
             mountComponent(item, srcdoc);
-            setComponentState(item.componentId, 'loading');
+            setComponentState(instanceId, 'loading');
           } catch (error) {
-            setComponentState(item.componentId, 'unavailable');
-            console.warn(`BAP component ${item.componentId} unavailable; host continues`, error);
+            setComponentState(instanceId, 'unavailable');
+            console.warn(`BAP component ${item.componentId} (${instanceId}) unavailable; host continues`, error);
           }
         }
-        const record = mountedComponents.get(item.componentId);
+        const record = mountedComponents.get(instanceId);
+        const nextConfig = JSON.stringify(item.config ?? {});
+        if (record && record.config !== nextConfig && host.updateConfig(instanceId, item.config ?? {}, item.configRevision ?? 0)) {
+          record.config = nextConfig;
+          record.configRevision = item.configRevision ?? record.configRevision;
+        }
         if (record) orderedContainers.push(record.container);
       }
       orderedContainers.forEach((container, index) => { container.dataset.slot = String(index % 4); });
       synchronizeComponentOrder(componentContainer, orderedContainers);
-      for (const id of componentStates.keys()) if (!selected.some(item => item.componentId === id)) componentStates.delete(id);
+      for (const id of componentStates.keys()) if (!selected.some(item => item.instanceId === id)) componentStates.delete(id);
       showStatus();
     } catch (error) { console.warn('BAP preset refresh failed', error); }
     finally { refreshing = false; }
