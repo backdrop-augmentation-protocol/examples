@@ -102,10 +102,12 @@ test('local calendar exposes the same collapsible grid in both modes', async () 
   for (const html of [standalone, embedded]) {
     assert.match(html, /id="toggle-calendar"/);
     assert.match(html, /aria-controls="grid" aria-expanded="true"/);
-    assert.match(html, /\.grid\[hidden\]\{display:none\}/);
+    assert.match(html, /\.grid\s*\[hidden\]\s*\{\s*display:\s*none\s*;?\s*\}/);
   }
   assert.match(embedded, /Expand calendar/);
   assert.match(embedded, /grid\.hidden\s*=/);
+  assert.match(embedded, /overflow:\s*hidden/);
+  assert.match(embedded, /@media\s*\(max-height:\s*420px\)/);
   const host = await readFile(new URL('../dist/workshop-host-wallpaper/index.html', import.meta.url), 'utf8');
   assert.match(host, /\.component\{[^}]*pointer-events:auto/);
   assert.match(standalone, /\.\/assets\/calendar-widget\/lake-mountain\.jpg/);
