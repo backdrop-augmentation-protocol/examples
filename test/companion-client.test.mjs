@@ -20,6 +20,7 @@ test('reads embedded resources without using the HTTP cache', async t => {
     requests.push({ url, options });
     if (url.endsWith('/v1/session')) return { ok: true, json: async () => ({ sessionId: 'test-session', accessToken: 'test-token' }) };
     if (url.endsWith('/v1/diagnostics')) return { ok: true };
+    if (url.includes('/v1/hosts/')) return { ok: true, json: async () => [] };
     if (url.includes('/resources/')) return { ok: true, blob: async () => new Blob(['<p>clock</p>']) };
     throw new Error(`Unexpected request: ${url}`);
   };
@@ -34,7 +35,8 @@ test('reads embedded resources without using the HTTP cache', async t => {
     }
     close() {}
   };
-  const companion = await connectCompanion({ diagnosticInstanceId: 'a'.repeat(32), onDiagnostic: entry => diagnostics.push(entry) });
+  const companion = await connectCompanion({ diagnosticInstanceId: 'a'.repeat(32), onDiagnostic: entry => diagnostics.push(entry), projectUrl: 'file:///D:/wallpapers/local-host/index.html' });
+  await companion.listEffectiveComponents('org.example.host');
   const resource = await companion.fetchCatalogResource('workshop:123', './embedded.html');
   assert.equal(await resource.text(), '<p>clock</p>');
   const fetchRequest = requests.find(item => item.url.includes('/resources/'));
@@ -47,6 +49,8 @@ test('reads embedded resources without using the HTTP cache', async t => {
   assert.equal(fetchRequest.options.cache, 'no-store');
   assert.equal(fetchRequest.options.headers.authorization, 'Bearer test-token');
   assert.match(fetchRequest.url, /workshop%3A123\/resources\/embedded\.html$/);
+  const effectiveRequest = requests.find(item => item.url.includes('/v1/hosts/'));
+  assert.match(effectiveRequest.url, /projectUrl=file%3A%2F%2F%2FD%3A%2Fwallpapers%2Flocal-host%2Findex\.html$/);
   companion.close();
 });
 

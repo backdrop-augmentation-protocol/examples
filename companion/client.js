@@ -19,7 +19,7 @@ export function companionReconnectDelayMs(failedAttempts, random = Math.random) 
   return Math.round(base * (1 + jitter));
 }
 
-export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clientName = 'BAP Host Wallpaper Demo', clientKind = 'host', diagnosticInstanceId, onDiagnostic } = {}) {
+export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clientName = 'BAP Host Wallpaper Demo', clientKind = 'host', diagnosticInstanceId, onDiagnostic, projectUrl = globalThis.location?.href } = {}) {
   const httpBase = baseUrl.replace(/\/$/, '');
   let session;
   const report = (event, details = {}) => {
@@ -84,7 +84,10 @@ export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clie
     socket,
     reportDiagnostic(event, details = {}) { report(event, { sessionId: session.sessionId, ...details }); },
     listComponents() { return readJson('/v1/components', 'Companion component discovery failed'); },
-    listEffectiveComponents(hostId) { return readJson(`/v1/hosts/${encodeURIComponent(hostId)}/components`, 'Companion preset read failed'); },
+    listEffectiveComponents(hostId) {
+      const query = projectUrl ? `?projectUrl=${encodeURIComponent(projectUrl)}` : '';
+      return readJson(`/v1/hosts/${encodeURIComponent(hostId)}/components${query}`, 'Companion preset read failed');
+    },
     getComponentManifest(id) { return readJson(`/v1/components/${encodeURIComponent(id)}/manifest`, 'Companion manifest read failed'); },
     async fetchComponentResource(id, path) { const response = await authFetch(`/v1/components/${encodeURIComponent(id)}/resources/${path.split('/').map(encodeURIComponent).join('/')}`, { cache: 'no-store' }); if (!response.ok) throw new Error(`Companion resource read failed: HTTP ${response.status}`); return response.blob(); },
     async fetchCatalogResource(key, path) { const response = await authFetch(`/v1/catalog/components/${encodeURIComponent(key)}/resources/${path.replace(/^\.\//, '').split('/').map(encodeURIComponent).join('/')}`, { cache: 'no-store' }); if (!response.ok) throw new Error(`Companion catalog resource read failed: HTTP ${response.status}`); return response.blob(); },
