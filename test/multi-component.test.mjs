@@ -1,17 +1,19 @@
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
-import { synchronizeComponentOrder } from '../host-wallpaper/layout.js';
+import { resolveLayouts } from '@backdrop-augmentation-protocol/host-sdk';
 
 test('Host demo auto-layout mounts preset components without bundling them', async () => {
   const html = await readFile(new URL('../dist/workshop-host-wallpaper/index.html', import.meta.url), 'utf8');
   const script = await readFile(new URL('../dist/workshop-host-wallpaper/main.js', import.meta.url), 'utf8');
   assert.match(html, /id="components"/);
   assert.match(html, /\.components\{/);
-  assert.match(html, /data-component-id="org\.bap\.examples\.time-widget"[^}]*bottom:6vh/);
-  assert.match(html, /data-component-id="org\.bap\.examples\.calendar-widget"[^}]*right:4vw/);
-  assert.match(script, /listEffectiveComponents\(hostId\)/);
-  assert.match(script, /synchronizeComponentOrder\(componentContainer, orderedContainers\)/);
+  assert.match(html, /\.components>\.component\{pointer-events:auto\}/);
+  assert.match(script, /getComposition\(hostId\)/);
+  assert.match(script, /host\.setLayoutMode\(composition\.layoutMode, composition\.grid/);
+  assert.match(script, /layout: definition\.layout/);
+  assert.match(script, /host\.setLayout\(instanceId, item\.layout\)/);
+  assert.match(script, /org\.bap\.composition/);
   assert.match(script, /host\.unmount\(id\)/);
   const hostFiles = await readdir(new URL('../dist/workshop-host-wallpaper/', import.meta.url));
   assert.ok(!hostFiles.includes('time-widget'));
@@ -27,25 +29,40 @@ test('Host demo auto-layout mounts preset components without bundling them', asy
   assert.ok(!Object.hasOwn(weProject, 'workshopid'));
 });
 
-test('unchanged preset order never reparents mounted component iframes', () => {
-  const time = { id: 'time' };
-  const calendar = { id: 'calendar' };
-  const container = {
-    children: [time, calendar],
-    appendCount: 0,
-    appendChild(node) {
-      this.children = this.children.filter(child => child !== node);
-      this.children.push(node);
-      this.appendCount++;
-    },
-  };
-  assert.equal(synchronizeComponentOrder(container, [time, calendar]), false);
-  assert.equal(container.appendCount, 0);
-  assert.equal(synchronizeComponentOrder(container, [calendar, time]), true);
-  assert.deepEqual(container.children, [calendar, time]);
-  const changedCount = container.appendCount;
-  assert.equal(synchronizeComponentOrder(container, [calendar, time]), false);
-  assert.equal(container.appendCount, changedCount);
+test('demo widgets publish useful editable properties and react to per-instance config', async () => {
+  const timeProject = JSON.parse(await readFile(new URL('../dist/workshop-time-widget/project.json', import.meta.url), 'utf8'));
+  const calendarProject = JSON.parse(await readFile(new URL('../dist/workshop-calendar-widget/project.json', import.meta.url), 'utf8'));
+  const timeProperties = timeProject.general.properties;
+  const calendarProperties = calendarProject.general.properties;
+  assert.equal(timeProperties.use12HourClock.type, 'bool');
+  assert.equal(timeProperties.showSeconds.type, 'bool');
+  assert.equal(timeProperties.showDate.type, 'bool');
+  assert.equal(timeProperties.fontScale.type, 'slider');
+  assert.equal(calendarProperties.weekStartsSunday.type, 'bool');
+  assert.equal(calendarProperties.showAdjacentDays.type, 'bool');
+  assert.equal(calendarProperties.showYear.type, 'bool');
+  assert.equal(calendarProperties.fontScale.type, 'slider');
+  const timeScript = await readFile(new URL('../dist/workshop-time-widget/main.js', import.meta.url), 'utf8');
+  const calendarScript = await readFile(new URL('../dist/workshop-calendar-widget/main.js', import.meta.url), 'utf8');
+  assert.match(timeScript, /runtime\.onConfigChange\(render\)/);
+  assert.match(timeScript, /wallpaperPropertyListener/);
+  assert.match(timeScript, /runtime\.getConfig\('use12HourClock'\)/);
+  assert.match(calendarScript, /runtime\.getConfig\('weekStartsSunday'\)/);
+  assert.match(calendarScript, /runtime\.getConfig\('showAdjacentDays'\)/);
+  assert.match(calendarScript, /wallpaperPropertyListener/);
+});
+
+test('grid auto-layout gives repeated instances of one component independent slots', () => {
+  const layout = order => ({ mode: 'automatic', order, scale: 1, rotation: 0, opacity: 1, zIndex: order, locked: false });
+  const resolved = resolveLayouts(new Map([
+    ['clock-a', layout(0)],
+    ['clock-b', layout(1)],
+    ['calendar', layout(2)],
+  ]), 'grid', { columns: 2, gapX: 0.04, gapY: 0.04, paddingX: 0.04, paddingY: 0.04 }, { width: 1920, height: 1080 });
+  assert.equal(resolved.size, 3);
+  assert.notDeepEqual(resolved.get('clock-a'), resolved.get('clock-b'));
+  assert.notEqual(resolved.get('clock-a').x, resolved.get('clock-b').x);
+  assert.notEqual(resolved.get('clock-b').y, resolved.get('calendar').y);
 });
 
 test('diagnostic instrumentation is opt-in and excluded from Workshop host package', async () => {

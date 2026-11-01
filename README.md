@@ -79,7 +79,13 @@ is created. The standalone entrypoint keeps its own package resources.
 For a local two-component test, start Companion with `BAP_LOCAL_ROOTS`
 pointing to `dist/local-calendar-widget/`; subscribed components are discovered
 alongside it. The Host uses the active Companion preset, can add or remove
-components without an embedded copy, and auto-arranges them in preset order.
+components without an embedded copy, and consumes the full composition snapshot
+to lay out each instance through the Host SDK's responsive grid. The same
+component can be added multiple times; each instance keeps its own configuration.
+The time widget exposes 12/24-hour format, seconds/date visibility, accent color,
+and size controls. The calendar exposes week start, adjacent-month dates, year
+visibility, accent color, and size controls. Changes in BAPC are applied to the
+corresponding instance without restarting its iframe.
 The generated Host package now carries a Host Manifest; an older subscribed
 demo without that file remains recognizable through the Companion's legacy
 example mapping until it is updated through the editor.

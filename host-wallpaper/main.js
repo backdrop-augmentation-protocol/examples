@@ -1,6 +1,5 @@
 import { HostRuntime, WallpaperEngineHost } from '../sdk/host-sdk/index.js';
 import { COMPANION_POLICY, companionReconnectDelayMs, connectCompanion } from '../companion/client.js';
-import { synchronizeComponentOrder } from './layout.js';
 
 const video = document.querySelector('#video');
 const volume = document.querySelector('#volume');
@@ -49,41 +48,43 @@ const host = new HostRuntime({
   implementationName: 'BAP Host Wallpaper Demo',
   implementationVersion: '0.1.0',
   capabilities: ['lifecycle', 'size', 'pause-resume', 'config'],
-  extensions: [{ id: 'org.bap.component-config', versions: ['0.1.0'] }],
+  extensions: [
+    { id: 'org.bap.component-config', versions: ['0.1.0'] },
+    { id: 'org.bap.composition', versions: ['0.1.0'] },
+  ],
+  viewport: { width: window.innerWidth, height: window.innerHeight },
 });
 const mountedComponents = new Map();
+let activeLayoutMode = null;
 function mountComponent(definition, srcdoc) {
   const { instanceId, componentId, sourceKey } = definition;
-  const container = document.createElement('div');
-  container.className = 'component';
-  container.dataset.componentId = componentId;
-  container.dataset.instanceId = instanceId;
-  componentContainer.appendChild(container);
   const component = host.mount({
     instanceId,
     componentId,
     sourceKey,
     srcdoc,
-    container,
-    size: { width: container.clientWidth, height: container.clientHeight },
+    container: componentContainer,
+    layout: definition.layout,
     config: definition.config ?? {},
     configRevision: definition.configRevision ?? 0,
   });
-  mountedComponents.set(instanceId, { component, container, sourceKey, config: JSON.stringify(definition.config ?? {}), configRevision: definition.configRevision ?? 0 });
+  component.wrapper.className = 'component';
+  component.wrapper.dataset.componentId = componentId;
+  component.wrapper.dataset.instanceId = instanceId;
+  mountedComponents.set(instanceId, { component, sourceKey, config: JSON.stringify(definition.config ?? {}), configRevision: definition.configRevision ?? 0, layout: JSON.stringify(definition.layout) });
   component.on('ready', () => setComponentState(instanceId, 'running'));
   component.on('fault', (fault) => { setComponentState(instanceId, 'unavailable'); console.warn(`BAP component ${componentId} (${instanceId}) unavailable; host continues`, JSON.stringify(fault)); });
-  component.on('stopped', () => { if (mountedComponents.get(instanceId)?.component === component) mountedComponents.delete(instanceId); container.remove(); });
+  component.on('stopped', () => { if (mountedComponents.get(instanceId)?.component === component) mountedComponents.delete(instanceId); });
 }
 const adapter = {
-  // Auto-layout containers are measured per component below.
+  // HostRuntime owns component sizing and responsive layout.
   onSize() {},
   onPause(listener) { this.pause = listener; },
   onResume(listener) { this.resume = listener; },
 };
 new WallpaperEngineHost(host, adapter);
 window.addEventListener('resize', () => {
-  for (const { component, container } of mountedComponents.values())
-    component.setSize({ width: container.clientWidth, height: container.clientHeight });
+  host.setViewport({ width: window.innerWidth, height: window.innerHeight });
 });
 
 async function connectToCompanion() {
@@ -111,15 +112,22 @@ async function connectToCompanion() {
     if (refreshing || reconnectScheduled) return;
     refreshing = true;
     try {
-      const selected = await companion.listEffectiveComponents(hostId);
+      const composition = await companion.getComposition(hostId);
+      const selected = composition.instances ?? [];
       if (reconnectScheduled) return;
       const desired = new Set(selected.filter(item => item.status === 'available').map(item => item.instanceId));
+      const layoutModeChanged = activeLayoutMode !== null && activeLayoutMode !== composition.layoutMode;
+      if (layoutModeChanged) {
+        for (const instanceId of mountedComponents.keys()) host.unmount(instanceId);
+        mountedComponents.clear();
+      }
+      host.setLayoutMode(composition.layoutMode, composition.grid ?? undefined);
+      activeLayoutMode = composition.layoutMode;
       for (const instanceId of mountedComponents.keys()) {
         const record = mountedComponents.get(instanceId);
         const next = selected.find(item => item.instanceId === instanceId);
         if (!desired.has(instanceId) || next?.sourceKey !== record.sourceKey) host.unmount(instanceId);
       }
-      const orderedContainers = [];
       for (const item of selected) {
         const instanceId = item.instanceId;
         if (item.status !== 'available') { setComponentState(instanceId, item.status); continue; }
@@ -138,14 +146,16 @@ async function connectToCompanion() {
         }
         const record = mountedComponents.get(instanceId);
         const nextConfig = JSON.stringify(item.config ?? {});
+        const nextLayout = JSON.stringify(item.layout);
+        if (record && record.layout !== nextLayout && item.layout) {
+          host.setLayout(instanceId, item.layout);
+          record.layout = nextLayout;
+        }
         if (record && record.config !== nextConfig && host.updateConfig(instanceId, item.config ?? {}, item.configRevision ?? 0)) {
           record.config = nextConfig;
           record.configRevision = item.configRevision ?? record.configRevision;
         }
-        if (record) orderedContainers.push(record.container);
       }
-      orderedContainers.forEach((container, index) => { container.dataset.slot = String(index % 4); });
-      synchronizeComponentOrder(componentContainer, orderedContainers);
       for (const id of componentStates.keys()) if (!selected.some(item => item.instanceId === id)) componentStates.delete(id);
       showStatus();
     } catch (error) { console.warn('BAP preset refresh failed', error); }

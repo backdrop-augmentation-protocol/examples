@@ -8,7 +8,34 @@
         "order": 0,
         "text": "ui_browse_properties_scheme_color",
         "type": "color",
-        "value": "0 0 0"
+        "value": "0.55 0.82 1"
+      },
+      "weekStartsSunday": {
+        "order": 1,
+        "text": "Start week on Sunday",
+        "type": "bool",
+        "value": false
+      },
+      "showAdjacentDays": {
+        "order": 2,
+        "text": "Show adjacent month dates",
+        "type": "bool",
+        "value": true
+      },
+      "showYear": {
+        "order": 3,
+        "text": "Show year",
+        "type": "bool",
+        "value": true
+      },
+      "fontScale": {
+        "order": 4,
+        "text": "Widget size",
+        "type": "slider",
+        "value": 1,
+        "min": 0.75,
+        "max": 1.5,
+        "step": 0.05
       }
     }
   },
