@@ -35,7 +35,15 @@ test('demo widgets publish useful editable properties and react to per-instance 
   const timeProperties = timeProject.general.properties;
   const calendarProperties = calendarProject.general.properties;
   assert.equal(timeProperties.timePreset.type, 'combo');
+  assert.equal(timeProperties.timePreset.text, 'Clock & Date');
+  assert.equal(timeProperties.appearancePreset.type, 'combo');
+  assert.equal(timeProperties.appearancePreset.text, 'Appearance');
+  assert.equal(timeProperties.schemecolor.order, 11);
+  assert.equal(timeProperties.fontScale.condition, "appearancePreset.value == 'custom'");
   assert.equal(calendarProperties.calendarPreset.type, 'combo');
+  assert.equal(calendarProperties.appearancePreset.type, 'combo');
+  assert.equal(calendarProperties.schemecolor.order, 11);
+  assert.equal(calendarProperties.fontScale.condition, "appearancePreset.value == 'custom'");
   assert.equal(timeProperties.timeFormat.type, 'combo');
   assert.deepEqual(timeProperties.timeFormat.options.map(option => option.value), ['24h', '12h', 'locale']);
   assert.equal(timeProperties.label.type, 'textinput');
@@ -57,9 +65,11 @@ test('demo widgets publish useful editable properties and react to per-instance 
   assert.match(timeScript, /runtime\.getConfig\('timeFormat'\)/);
   assert.match(timeScript, /runtime\.getConfig\('label'\)/);
   assert.match(timeScript, /runtime\.getConfig\('timePreset'\)/);
+  assert.match(timeScript, /runtime\.getConfig\('appearancePreset'\)/);
   assert.match(calendarScript, /runtime\.getConfig\('weekStart'\)/);
   assert.match(calendarScript, /runtime\.getConfig\('calendarTitle'\)/);
   assert.match(calendarScript, /runtime\.getConfig\('calendarPreset'\)/);
+  assert.match(calendarScript, /runtime\.getConfig\('appearancePreset'\)/);
   assert.match(calendarScript, /runtime\.getConfig\('showAdjacentDays'\)/);
   assert.match(calendarScript, /wallpaperPropertyListener/);
 });

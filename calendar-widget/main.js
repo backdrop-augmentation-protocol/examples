@@ -21,7 +21,8 @@ toggle.addEventListener('click', () => {
 
 
 function render() {
-  const channels = String(runtime.getConfig('schemecolor') ?? '').split(/\s+/).map(Number);
+  const color = runtime.getConfig('appearancePreset') === 'standard' ? '0.55 0.82 1' : runtime.getConfig('schemecolor');
+  const channels = String(color ?? '').split(/\s+/).map(Number);
   if (channels.length === 3 && channels.every(value => Number.isFinite(value) && value >= 0 && value <= 1))
     document.documentElement.style.setProperty('--bap-scheme-color', `rgb(${channels.map(value => Math.round(value * 255)).join(' ')})`);
   const now = new Date();
@@ -47,7 +48,7 @@ function render() {
   grid.innerHTML = [...weekdays, ...days].join('');
   grid.querySelector('.today')?.style.setProperty('background-color', 'var(--bap-scheme-color)');
   document.querySelector('.eyebrow').textContent = custom && runtime.getConfig('showYear') !== false ? runtime.getConfig('calendarTitle') || 'BAP CALENDAR' : 'BAP CALENDAR';
-  document.body.style.zoom = String(runtime.getConfig('fontScale') || 1);
+  document.body.style.zoom = String(runtime.getConfig('appearancePreset') === 'standard' ? 1 : runtime.getConfig('fontScale') || 1);
 }
 
 runtime.onConfigChange(render);
@@ -56,7 +57,7 @@ setInterval(() => { if (runtime.state === 'running') render(); }, 60_000);
 window.wallpaperPropertyListener = {
   applyUserProperties(properties) {
     const patch = {};
-    for (const key of ['calendarPreset', 'weekStart', 'showAdjacentDays', 'showYear', 'calendarTitle', 'fontScale', 'schemecolor'])
+    for (const key of ['calendarPreset', 'weekStart', 'showAdjacentDays', 'showYear', 'calendarTitle', 'appearancePreset', 'fontScale', 'schemecolor'])
       if (properties[key]?.value !== undefined) patch[key] = properties[key].value;
     void runtime.setConfig(patch);
   },

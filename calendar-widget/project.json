@@ -6,7 +6,7 @@
     "properties": {
       "calendarPreset": {
         "order": 0,
-        "text": "Calendar layout",
+        "text": "Calendar",
         "type": "combo",
         "value": "custom",
         "options": [
@@ -15,10 +15,21 @@
         ]
       },
       "schemecolor": {
-        "order": 10,
+        "order": 11,
         "text": "ui_browse_properties_scheme_color",
         "type": "color",
-        "value": "0.55 0.82 1"
+        "value": "0.55 0.82 1",
+        "condition": "appearancePreset.value == 'custom'"
+      },
+      "appearancePreset": {
+        "order": 10,
+        "text": "Appearance",
+        "type": "combo",
+        "value": "custom",
+        "options": [
+          { "value": "standard", "text": "Standard" },
+          { "value": "custom", "text": "Custom" }
+        ]
       },
       "weekStart": {
         "order": 1,
@@ -53,13 +64,14 @@
         "condition": "calendarPreset.value == 'custom' && showYear.value == true"
       },
       "fontScale": {
-        "order": 11,
+        "order": 12,
         "text": "Widget size",
         "type": "slider",
         "value": 1,
         "min": 0.75,
         "max": 1.5,
-        "step": 0.05
+        "step": 0.05,
+        "condition": "appearancePreset.value == 'custom'"
       }
     }
   },
