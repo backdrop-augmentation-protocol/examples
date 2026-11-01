@@ -1,7 +1,7 @@
 const PROTOCOL = { name: 'bap', version: '0.1.0', profile: 'core' };
 
 export const COMPANION_POLICY = Object.freeze({
-  componentRefreshIntervalMs: 1500,
+  componentRefreshIntervalMs: 200,
   reconnectInitialDelayMs: 3000,
   reconnectMaximumDelayMs: 30000,
   reconnectMultiplier: 2,
