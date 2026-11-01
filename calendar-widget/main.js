@@ -27,9 +27,10 @@ function render() {
   const now = new Date();
   const locale = runtime.getConfig('locale') || 'en-US';
   month.textContent = new Intl.DateTimeFormat(locale, { month: 'long' }).format(now);
-  year.textContent = runtime.getConfig('showYear') === false ? '' : String(now.getFullYear());
+  const custom = runtime.getConfig('calendarPreset') !== 'standard';
+  year.textContent = custom && runtime.getConfig('showYear') === false ? '' : String(now.getFullYear());
   const first = new Date(now.getFullYear(), now.getMonth(), 1);
-  const sundayFirst = runtime.getConfig('weekStart') === 'sunday';
+  const sundayFirst = custom && runtime.getConfig('weekStart') === 'sunday';
   const offset = (first.getDay() + (sundayFirst ? 0 : 6)) % 7;
   const weekdays = Array.from({ length: 7 }, (_, index) => {
     const day = new Date(2024, 0, (sundayFirst ? 7 : 1) + index);
@@ -41,11 +42,11 @@ function render() {
     const outsideMonth = day.getMonth() !== now.getMonth();
     if (outsideMonth) classes.push('outside');
     if (day.toDateString() === now.toDateString()) classes.push('today');
-    return `<span class="${classes.join(' ')}">${outsideMonth && runtime.getConfig('showAdjacentDays') === false ? '' : day.getDate()}</span>`;
+    return `<span class="${classes.join(' ')}">${custom && outsideMonth && runtime.getConfig('showAdjacentDays') === false ? '' : day.getDate()}</span>`;
   });
   grid.innerHTML = [...weekdays, ...days].join('');
   grid.querySelector('.today')?.style.setProperty('background-color', 'var(--bap-scheme-color)');
-  document.querySelector('.eyebrow').textContent = runtime.getConfig('calendarTitle') || 'BAP CALENDAR';
+  document.querySelector('.eyebrow').textContent = custom && runtime.getConfig('showYear') !== false ? runtime.getConfig('calendarTitle') || 'BAP CALENDAR' : 'BAP CALENDAR';
   document.body.style.zoom = String(runtime.getConfig('fontScale') || 1);
 }
 
@@ -55,7 +56,7 @@ setInterval(() => { if (runtime.state === 'running') render(); }, 60_000);
 window.wallpaperPropertyListener = {
   applyUserProperties(properties) {
     const patch = {};
-    for (const key of ['weekStart', 'showAdjacentDays', 'showYear', 'calendarTitle', 'fontScale', 'schemecolor'])
+    for (const key of ['calendarPreset', 'weekStart', 'showAdjacentDays', 'showYear', 'calendarTitle', 'fontScale', 'schemecolor'])
       if (properties[key]?.value !== undefined) patch[key] = properties[key].value;
     void runtime.setConfig(patch);
   },

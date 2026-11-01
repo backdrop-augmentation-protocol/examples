@@ -4,8 +4,18 @@
   "file": "index.html",
   "general": {
     "properties": {
-      "schemecolor": {
+      "timePreset": {
         "order": 0,
+        "text": "Time display",
+        "type": "combo",
+        "value": "custom",
+        "options": [
+          { "value": "standard", "text": "Standard" },
+          { "value": "custom", "text": "Custom" }
+        ]
+      },
+      "schemecolor": {
+        "order": 10,
         "text": "ui_browse_properties_scheme_color",
         "type": "color",
         "value": "0.55 0.82 1"
@@ -15,6 +25,7 @@
         "text": "Time format",
         "type": "combo",
         "value": "24h",
+        "condition": "timePreset.value == 'custom'",
         "options": [
           { "value": "24h", "text": "24-hour" },
           { "value": "12h", "text": "12-hour" },
@@ -25,22 +36,36 @@
         "order": 2,
         "text": "Show seconds",
         "type": "bool",
-        "value": false
+        "value": false,
+        "condition": "timePreset.value == 'custom'"
       },
       "showDate": {
         "order": 3,
         "text": "Show date",
         "type": "bool",
-        "value": true
+        "value": true,
+        "condition": "timePreset.value == 'custom'"
+      },
+      "dateStyle": {
+        "order": 4,
+        "text": "Date format",
+        "type": "combo",
+        "value": "long",
+        "condition": "timePreset.value == 'custom' && showDate.value == true",
+        "options": [
+          { "value": "long", "text": "Long" },
+          { "value": "short", "text": "Short" }
+        ]
       },
       "label": {
-        "order": 4,
+        "order": 5,
         "text": "Widget label",
         "type": "textinput",
-        "value": "BAP TIME WIDGET"
+        "value": "BAP TIME WIDGET",
+        "condition": "timePreset.value == 'custom'"
       },
       "fontScale": {
-        "order": 5,
+        "order": 11,
         "text": "Widget size",
         "type": "slider",
         "value": 1,

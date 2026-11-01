@@ -4,8 +4,18 @@
   "file": "index.html",
   "general": {
     "properties": {
-      "schemecolor": {
+      "calendarPreset": {
         "order": 0,
+        "text": "Calendar layout",
+        "type": "combo",
+        "value": "custom",
+        "options": [
+          { "value": "standard", "text": "Standard" },
+          { "value": "custom", "text": "Custom" }
+        ]
+      },
+      "schemecolor": {
+        "order": 10,
         "text": "ui_browse_properties_scheme_color",
         "type": "color",
         "value": "0.55 0.82 1"
@@ -15,6 +25,7 @@
         "text": "First day of week",
         "type": "combo",
         "value": "monday",
+        "condition": "calendarPreset.value == 'custom'",
         "options": [
           { "value": "monday", "text": "Monday" },
           { "value": "sunday", "text": "Sunday" }
@@ -24,22 +35,25 @@
         "order": 2,
         "text": "Show adjacent month dates",
         "type": "bool",
-        "value": true
+        "value": true,
+        "condition": "calendarPreset.value == 'custom'"
       },
       "showYear": {
         "order": 3,
         "text": "Show year",
         "type": "bool",
-        "value": true
+        "value": true,
+        "condition": "calendarPreset.value == 'custom'"
       },
       "calendarTitle": {
         "order": 4,
         "text": "Calendar label",
         "type": "textinput",
-        "value": "BAP CALENDAR"
+        "value": "BAP CALENDAR",
+        "condition": "calendarPreset.value == 'custom' && showYear.value == true"
       },
       "fontScale": {
-        "order": 5,
+        "order": 11,
         "text": "Widget size",
         "type": "slider",
         "value": 1,

@@ -15,12 +15,12 @@ function applySchemeColor() {
     document.documentElement.style.setProperty('--bap-scheme-color', `rgb(${channels.map(value => Math.round(value * 255)).join(' ')})`);
   document.querySelector('.badge').style.color = 'var(--bap-scheme-color)';
 }
-function render() { applySchemeColor(); const now = new Date(); const locale = runtime.getConfig('locale') || 'en-US'; const format = runtime.getConfig('timeFormat') || '24h'; const hour12 = format === '12h' ? true : format === '24h' ? false : undefined; time.textContent = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', second: runtime.getConfig('showSeconds') ? '2-digit' : undefined, hour12 }).format(now); date.textContent = new Intl.DateTimeFormat(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).format(now); date.hidden = runtime.getConfig('showDate') === false; document.querySelector('.badge').textContent = runtime.getConfig('label') || 'BAP TIME WIDGET'; document.body.style.zoom = String(runtime.getConfig('fontScale') || 1); }
+function render() { applySchemeColor(); const now = new Date(); const locale = runtime.getConfig('locale') || 'en-US'; const custom = runtime.getConfig('timePreset') !== 'standard'; const format = custom ? runtime.getConfig('timeFormat') || '24h' : '24h'; const hour12 = format === '12h' ? true : format === '24h' ? false : undefined; const showDate = !custom || runtime.getConfig('showDate') !== false; time.textContent = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', second: custom && runtime.getConfig('showSeconds') ? '2-digit' : undefined, hour12 }).format(now); const dateOptions = custom && runtime.getConfig('dateStyle') === 'short' ? { year: 'numeric', month: 'numeric', day: 'numeric' } : { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }; date.textContent = new Intl.DateTimeFormat(locale, dateOptions).format(now); date.hidden = !showDate; document.querySelector('.badge').textContent = custom ? runtime.getConfig('label') || 'BAP TIME WIDGET' : 'BAP TIME WIDGET'; document.body.style.zoom = String(runtime.getConfig('fontScale') || 1); }
 runtime.onConfigChange(render); render(); setInterval(() => { if (runtime.state === 'running') render(); }, 1000);
 window.wallpaperPropertyListener = {
   applyUserProperties(properties) {
     const patch = {};
-    for (const key of ['timeFormat', 'showSeconds', 'showDate', 'label', 'fontScale', 'schemecolor'])
+    for (const key of ['timePreset', 'timeFormat', 'showSeconds', 'showDate', 'dateStyle', 'label', 'fontScale', 'schemecolor'])
       if (properties[key]?.value !== undefined) patch[key] = properties[key].value;
     void runtime.setConfig(patch);
   },
