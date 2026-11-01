@@ -10,11 +10,15 @@
         "type": "color",
         "value": "0.55 0.82 1"
       },
-      "weekStartsSunday": {
+      "weekStart": {
         "order": 1,
-        "text": "Start week on Sunday",
-        "type": "bool",
-        "value": false
+        "text": "First day of week",
+        "type": "combo",
+        "value": "monday",
+        "options": [
+          { "value": "monday", "text": "Monday" },
+          { "value": "sunday", "text": "Sunday" }
+        ]
       },
       "showAdjacentDays": {
         "order": 2,
@@ -28,8 +32,14 @@
         "type": "bool",
         "value": true
       },
-      "fontScale": {
+      "calendarTitle": {
         "order": 4,
+        "text": "Calendar label",
+        "type": "textinput",
+        "value": "BAP CALENDAR"
+      },
+      "fontScale": {
+        "order": 5,
         "text": "Widget size",
         "type": "slider",
         "value": 1,
