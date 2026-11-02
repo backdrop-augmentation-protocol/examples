@@ -15,18 +15,28 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/spec
-          ref: 334f6fee6abf14db246219a4468407373488db9c
+          ref: b01f2aec715e0d31b416038ab844e862474dae6c
           path: spec
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/conformance
-          ref: be409180718fc8762e217116d8e32c93ead918b9
+          ref: 8d2b69ae660de300231fbf7c840d4d7dc1024960
           path: conformance
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/companion
-          ref: 365b86ca52f39bb6aa747bd06b6cba6e7c5dea89
+          ref: 1ac8c39
           path: companion
+      - uses: actions/checkout@v6
+        with:
+          repository: backdrop-augmentation-protocol/host-sdk
+          ref: 62b22251629be8e0c32aa1a6caff3996ef510008
+          path: host-sdk
+      - uses: actions/checkout@v6
+        with:
+          repository: backdrop-augmentation-protocol/component-sdk
+          ref: 1f69f30f629d355f32fc75aadceb67b68a40ea66
+          path: component-sdk
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
@@ -37,7 +47,7 @@ jobs:
           dotnet-version: '10.0.x'
       - run: npm ci && npm run spec:install
         working-directory: conformance
-      - run: npm ci
+      - run: npm ci && npm install --no-save --package-lock=false ../host-sdk ../component-sdk
         working-directory: examples
       - run: dotnet publish src/Companion.Server/Companion.Server.csproj --configuration Release --output artifacts/ci-server
         working-directory: companion
