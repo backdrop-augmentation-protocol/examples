@@ -45,6 +45,8 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
+      - run: npm ci && npm run build
+        working-directory: host-sdk
       - run: npm ci && npm run spec:install
         working-directory: conformance
       - run: npm ci && npm install --no-save --package-lock=false ../host-sdk ../component-sdk
