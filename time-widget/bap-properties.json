@@ -34,6 +34,11 @@
       ]
     },
     "label": { "labels": { "en": "Widget label", "zh-CN": "挂件标题" } },
-    "fontScale": { "labels": { "en": "Widget size", "zh-CN": "挂件大小" } }
+    "fontScale": { "labels": { "en": "Widget size", "zh-CN": "挂件大小" } },
+    "widgetOffsetX": { "labels": { "en": "Horizontal position", "zh-CN": "水平位置" } },
+    "widgetOffsetY": { "labels": { "en": "Vertical position", "zh-CN": "垂直位置" } },
+    "widgetScale": { "labels": { "en": "Transform scale", "zh-CN": "变换缩放" } },
+    "widgetRotation": { "labels": { "en": "Rotation", "zh-CN": "旋转" } },
+    "widgetOpacity": { "labels": { "en": "Opacity", "zh-CN": "不透明度" } }
   }
 }

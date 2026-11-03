@@ -84,6 +84,51 @@
         "max": 1.5,
         "step": 0.05,
         "condition": "appearancePreset.value == 'custom'"
+      },
+      "widgetOffsetX": {
+        "order": 20,
+        "text": "Horizontal position",
+        "type": "slider",
+        "value": 0,
+        "min": -50,
+        "max": 50,
+        "step": 0.5
+      },
+      "widgetOffsetY": {
+        "order": 21,
+        "text": "Vertical position",
+        "type": "slider",
+        "value": 0,
+        "min": -50,
+        "max": 50,
+        "step": 0.5
+      },
+      "widgetScale": {
+        "order": 22,
+        "text": "Transform scale",
+        "type": "slider",
+        "value": 1,
+        "min": 0.25,
+        "max": 2,
+        "step": 0.05
+      },
+      "widgetRotation": {
+        "order": 23,
+        "text": "Rotation",
+        "type": "slider",
+        "value": 0,
+        "min": -180,
+        "max": 180,
+        "step": 1
+      },
+      "widgetOpacity": {
+        "order": 24,
+        "text": "Opacity",
+        "type": "slider",
+        "value": 1,
+        "min": 0.1,
+        "max": 1,
+        "step": 0.01
       }
     }
   },

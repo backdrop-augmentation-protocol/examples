@@ -26,6 +26,11 @@
     "showAdjacentDays": { "labels": { "en": "Show adjacent month dates", "zh-CN": "显示相邻月份日期" } },
     "showYear": { "labels": { "en": "Show year", "zh-CN": "显示年份" } },
     "calendarTitle": { "labels": { "en": "Calendar label", "zh-CN": "日历标题" } },
-    "fontScale": { "labels": { "en": "Widget size", "zh-CN": "挂件大小" } }
+    "fontScale": { "labels": { "en": "Widget size", "zh-CN": "挂件大小" } },
+    "widgetOffsetX": { "labels": { "en": "Horizontal position", "zh-CN": "水平位置" } },
+    "widgetOffsetY": { "labels": { "en": "Vertical position", "zh-CN": "垂直位置" } },
+    "widgetScale": { "labels": { "en": "Transform scale", "zh-CN": "变换缩放" } },
+    "widgetRotation": { "labels": { "en": "Rotation", "zh-CN": "旋转" } },
+    "widgetOpacity": { "labels": { "en": "Opacity", "zh-CN": "不透明度" } }
   }
 }

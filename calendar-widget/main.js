@@ -10,6 +10,18 @@ const month = document.querySelector('#month');
 const year = document.querySelector('#year');
 const grid = document.querySelector('#grid');
 const toggle = document.querySelector('#toggle-calendar');
+const calendar = document.querySelector('.calendar');
+
+function applyWidgetTransform() {
+  const finite = (key, fallback) => Number.isFinite(Number(runtime.getConfig(key))) ? Number(runtime.getConfig(key)) : fallback;
+  const x = Math.max(-50, Math.min(50, finite('widgetOffsetX', 0)));
+  const y = Math.max(-50, Math.min(50, finite('widgetOffsetY', 0)));
+  const scale = Math.max(0.25, Math.min(2, finite('widgetScale', 1)));
+  const rotation = Math.max(-180, Math.min(180, finite('widgetRotation', 0)));
+  const opacity = Math.max(0.1, Math.min(1, finite('widgetOpacity', 1)));
+  calendar.style.transform = `translate(${x}vw, ${y}vh) scale(${scale}) rotate(${rotation}deg)`;
+  calendar.style.opacity = String(opacity);
+}
 
 toggle.addEventListener('click', () => {
   const expanded = toggle.getAttribute('aria-expanded') !== 'true';
@@ -21,6 +33,7 @@ toggle.addEventListener('click', () => {
 
 
 function render() {
+  applyWidgetTransform();
   const color = runtime.getConfig('appearancePreset') === 'standard' ? '0.55 0.82 1' : runtime.getConfig('schemecolor');
   const channels = String(color ?? '').split(/\s+/).map(Number);
   if (channels.length === 3 && channels.every(value => Number.isFinite(value) && value >= 0 && value <= 1))
@@ -57,7 +70,7 @@ setInterval(() => { if (runtime.state === 'running') render(); }, 60_000);
 window.wallpaperPropertyListener = {
   applyUserProperties(properties) {
     const patch = {};
-    for (const key of ['calendarPreset', 'weekStart', 'showAdjacentDays', 'showYear', 'calendarTitle', 'appearancePreset', 'fontScale', 'schemecolor'])
+    for (const key of ['calendarPreset', 'weekStart', 'showAdjacentDays', 'showYear', 'calendarTitle', 'appearancePreset', 'fontScale', 'schemecolor', 'widgetOffsetX', 'widgetOffsetY', 'widgetScale', 'widgetRotation', 'widgetOpacity'])
       if (properties[key]?.value !== undefined) patch[key] = properties[key].value;
     void runtime.setConfig(patch);
   },
