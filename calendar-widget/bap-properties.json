@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "0.1.0",
+  "properties": {
+    "calendarPreset": {
+      "labels": { "en": "Calendar", "zh-CN": "日历" },
+      "options": [
+        { "value": "standard", "labels": { "en": "Standard", "zh-CN": "标准" } },
+        { "value": "custom", "labels": { "en": "Custom", "zh-CN": "自定义" } }
+      ]
+    },
+    "schemecolor": { "labels": { "en": "Color scheme", "zh-CN": "配色" } },
+    "appearancePreset": {
+      "labels": { "en": "Appearance", "zh-CN": "外观" },
+      "options": [
+        { "value": "standard", "labels": { "en": "Standard", "zh-CN": "标准" } },
+        { "value": "custom", "labels": { "en": "Custom", "zh-CN": "自定义" } }
+      ]
+    },
+    "weekStart": {
+      "labels": { "en": "First day of week", "zh-CN": "每周起始日" },
+      "options": [
+        { "value": "monday", "labels": { "en": "Monday", "zh-CN": "星期一" } },
+        { "value": "sunday", "labels": { "en": "Sunday", "zh-CN": "星期日" } }
+      ]
+    },
+    "showAdjacentDays": { "labels": { "en": "Show adjacent month dates", "zh-CN": "显示相邻月份日期" } },
+    "showYear": { "labels": { "en": "Show year", "zh-CN": "显示年份" } },
+    "calendarTitle": { "labels": { "en": "Calendar label", "zh-CN": "日历标题" } },
+    "fontScale": { "labels": { "en": "Widget size", "zh-CN": "挂件大小" } }
+  }
+}

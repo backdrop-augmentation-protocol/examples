@@ -20,10 +20,12 @@ test('Host demo auto-layout mounts preset components without bundling them', asy
   assert.ok(!hostFiles.includes('calendar-widget'));
   const localFiles = await readdir(new URL('../dist/local-calendar-widget/', import.meta.url));
   assert.ok(localFiles.includes('manifest.json'));
+  assert.ok(localFiles.includes('bap-properties.json'));
   assert.ok(!localFiles.includes('project.json'));
   const weFiles = await readdir(new URL('../dist/workshop-calendar-widget/', import.meta.url));
   assert.ok(weFiles.includes('project.json'));
   assert.ok(weFiles.includes('preview.png'));
+  assert.ok(weFiles.includes('bap-properties.json'));
   const weProject = JSON.parse(await readFile(new URL('../dist/workshop-calendar-widget/project.json', import.meta.url), 'utf8'));
   assert.equal(weProject.title, 'BAP Calendar Widget Demo');
   assert.ok(!Object.hasOwn(weProject, 'workshopid'));
@@ -32,6 +34,14 @@ test('Host demo auto-layout mounts preset components without bundling them', asy
 test('demo widgets publish useful editable properties and react to per-instance config', async () => {
   const timeProject = JSON.parse(await readFile(new URL('../dist/workshop-time-widget/project.json', import.meta.url), 'utf8'));
   const calendarProject = JSON.parse(await readFile(new URL('../dist/workshop-calendar-widget/project.json', import.meta.url), 'utf8'));
+  const timeLocalization = JSON.parse(await readFile(new URL('../dist/workshop-time-widget/bap-properties.json', import.meta.url), 'utf8'));
+  const calendarLocalization = JSON.parse(await readFile(new URL('../dist/workshop-calendar-widget/bap-properties.json', import.meta.url), 'utf8'));
+  const sourceTimeProject = JSON.parse(await readFile(new URL('../time-widget/project.json', import.meta.url), 'utf8'));
+  const sourceCalendarProject = JSON.parse(await readFile(new URL('../calendar-widget/project.json', import.meta.url), 'utf8'));
+  assert.deepEqual(timeProject, sourceTimeProject);
+  assert.deepEqual(calendarProject, sourceCalendarProject);
+  assert.equal(timeLocalization.properties.showSeconds.labels['zh-CN'], '显示秒数');
+  assert.equal(calendarLocalization.properties.weekStart.options[0].labels['zh-CN'], '星期一');
   const timeProperties = timeProject.general.properties;
   const calendarProperties = calendarProject.general.properties;
   assert.equal(timeProperties.timePreset.type, 'combo');

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "0.1.0",
+  "properties": {
+    "timePreset": {
+      "labels": { "en": "Clock & Date", "zh-CN": "时钟与日期" },
+      "options": [
+        { "value": "standard", "labels": { "en": "Standard", "zh-CN": "标准" } },
+        { "value": "custom", "labels": { "en": "Custom", "zh-CN": "自定义" } }
+      ]
+    },
+    "schemecolor": { "labels": { "en": "Color scheme", "zh-CN": "配色" } },
+    "appearancePreset": {
+      "labels": { "en": "Appearance", "zh-CN": "外观" },
+      "options": [
+        { "value": "standard", "labels": { "en": "Standard", "zh-CN": "标准" } },
+        { "value": "custom", "labels": { "en": "Custom", "zh-CN": "自定义" } }
+      ]
+    },
+    "timeFormat": {
+      "labels": { "en": "Time format", "zh-CN": "时间格式" },
+      "options": [
+        { "value": "24h", "labels": { "en": "24-hour", "zh-CN": "24 小时制" } },
+        { "value": "12h", "labels": { "en": "12-hour", "zh-CN": "12 小时制" } },
+        { "value": "locale", "labels": { "en": "System locale", "zh-CN": "系统区域设置" } }
+      ]
+    },
+    "showSeconds": { "labels": { "en": "Show seconds", "zh-CN": "显示秒数" } },
+    "showDate": { "labels": { "en": "Show date", "zh-CN": "显示日期" } },
+    "dateStyle": {
+      "labels": { "en": "Date format", "zh-CN": "日期格式" },
+      "options": [
+        { "value": "long", "labels": { "en": "Long", "zh-CN": "完整" } },
+        { "value": "short", "labels": { "en": "Short", "zh-CN": "简短" } }
+      ]
+    },
+    "label": { "labels": { "en": "Widget label", "zh-CN": "挂件标题" } },
+    "fontScale": { "labels": { "en": "Widget size", "zh-CN": "挂件大小" } }
+  }
+}

@@ -38,7 +38,7 @@ async function copyCalendarLandscape(destination) {
 
 const widgetPackage = resolve(dist, 'workshop-time-widget');
 await mkdir(widgetPackage, { recursive: true });
-for (const file of ['index.html', 'embedded.html', 'main.js', 'manifest.json', 'project.json', 'preview.jpg']) {
+for (const file of ['index.html', 'embedded.html', 'main.js', 'manifest.json', 'project.json', 'preview.jpg', 'bap-properties.json']) {
   await copyFile(resolve(root, 'time-widget', file), resolve(widgetPackage, file));
 }
 await cp(resolve(componentSdk, 'src'), resolve(widgetPackage, 'sdk', 'component-sdk'), { recursive: true });
@@ -54,7 +54,7 @@ await writeFile(resolve(widgetPackage, 'embedded.html'), await buildInlineEmbedd
 // Workshop upload package and deliberately has no project.json or preview.
 const calendarPackage = resolve(dist, 'local-calendar-widget');
 await mkdir(calendarPackage, { recursive: true });
-for (const file of ['index.html', 'embedded.html', 'main.js', 'manifest.json']) {
+for (const file of ['index.html', 'embedded.html', 'main.js', 'manifest.json', 'bap-properties.json']) {
   await copyFile(resolve(root, 'calendar-widget', file), resolve(calendarPackage, file));
 }
 await cp(resolve(componentSdk, 'src'), resolve(calendarPackage, 'sdk', 'component-sdk'), { recursive: true });
