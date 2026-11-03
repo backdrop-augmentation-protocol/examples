@@ -44,6 +44,21 @@ test('rejects wrong property value type', async t => {
   await assert.rejects(validateWorkshopPackage(root), /mute.value must be boolean/);
 });
 
+test('accepts Wallpaper Engine combo label/value options', async t => {
+  const root = await fixture(t, { ...base, general: { properties: { mode: {
+    type: 'combo', text: 'Mode', order: 1, value: 'one',
+    options: [{ value: 'one', label: 'One' }, { value: 'two', label: 'Two' }],
+  } } } });
+  assert.equal((await validateWorkshopPackage(root)).files, 4);
+});
+
+test('rejects combo option text instead of Wallpaper Engine label', async t => {
+  const root = await fixture(t, { ...base, general: { properties: { mode: {
+    type: 'combo', text: 'Mode', order: 1, value: 'one', options: [{ value: 'one', text: 'One' }],
+  } } } });
+  await assert.rejects(validateWorkshopPackage(root), /Wallpaper Engine label\/value pairs/);
+});
+
 test('rejects missing relative resource', async t => {
   const root = await fixture(t);
   await writeFile(join(root, 'main.js'), "import './missing.js';");

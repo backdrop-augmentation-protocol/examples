@@ -53,7 +53,7 @@ function validateProperties(project) {
     } else if (property.type === 'combo') {
       assert(['string', 'number', 'boolean'].includes(typeof property.value), `${name}.value must be a scalar combo value`);
       assert(Array.isArray(property.options) && property.options.length > 0, `${name}.options must be a nonempty array`);
-      assert(property.options.every(option => option && typeof option === 'object' && ['string', 'number', 'boolean'].includes(typeof option.value) && typeof option.text === 'string' && option.text.length > 0), `${name}.options must contain labeled scalar values`);
+      assert(property.options.every(option => option && typeof option === 'object' && ['string', 'number', 'boolean'].includes(typeof option.value) && typeof option.label === 'string' && option.label.length > 0), `${name}.options must contain Wallpaper Engine label/value pairs`);
       assert(property.options.some(option => JSON.stringify(option.value) === JSON.stringify(property.value)), `${name}.value must match an option`);
     } else if (property.type === 'textinput') assert(typeof property.value === 'string', `${name}.value must be a string`);
     else assert(false, `${name}.type is unsupported: ${property.type}`);

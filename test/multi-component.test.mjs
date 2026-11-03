@@ -56,6 +56,12 @@ test('demo widgets publish useful editable properties and react to per-instance 
   assert.equal(calendarProperties.fontScale.condition, "appearancePreset.value == 'custom'");
   assert.equal(timeProperties.timeFormat.type, 'combo');
   assert.deepEqual(timeProperties.timeFormat.options.map(option => option.value), ['24h', '12h', 'locale']);
+  for (const properties of [timeProperties, calendarProperties]) {
+    for (const definition of Object.values(properties)) {
+      if (definition.type !== 'combo') continue;
+      assert.ok(definition.options.every(option => typeof option.label === 'string' && !Object.hasOwn(option, 'text')));
+    }
+  }
   assert.equal(timeProperties.label.type, 'textinput');
   assert.equal(timeProperties.dateStyle.condition, "timePreset.value == 'custom' && showDate.value == true");
   assert.equal(timeProperties.showSeconds.type, 'bool');

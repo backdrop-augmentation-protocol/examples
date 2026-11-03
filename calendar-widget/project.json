@@ -10,8 +10,8 @@
         "type": "combo",
         "value": "custom",
         "options": [
-          { "value": "standard", "text": "Standard" },
-          { "value": "custom", "text": "Custom" }
+          { "value": "standard", "label": "Standard" },
+          { "value": "custom", "label": "Custom" }
         ]
       },
       "schemecolor": {
@@ -27,8 +27,8 @@
         "type": "combo",
         "value": "custom",
         "options": [
-          { "value": "standard", "text": "Standard" },
-          { "value": "custom", "text": "Custom" }
+          { "value": "standard", "label": "Standard" },
+          { "value": "custom", "label": "Custom" }
         ]
       },
       "weekStart": {
@@ -38,8 +38,8 @@
         "value": "monday",
         "condition": "calendarPreset.value == 'custom'",
         "options": [
-          { "value": "monday", "text": "Monday" },
-          { "value": "sunday", "text": "Sunday" }
+          { "value": "monday", "label": "Monday" },
+          { "value": "sunday", "label": "Sunday" }
         ]
       },
       "showAdjacentDays": {
