@@ -57,6 +57,8 @@ test('demo widgets publish useful editable properties and react to per-instance 
   assert.equal(timeProperties.timeFormat.type, 'combo');
   assert.deepEqual(timeProperties.timeFormat.options.map(option => option.value), ['24h', '12h', 'locale']);
   for (const properties of [timeProperties, calendarProperties]) {
+    assert.equal(properties.widgetTransformPreset.type, 'combo');
+    assert.equal(properties.widgetOffsetX.condition, "widgetTransformPreset.value == 'custom'");
     assert.deepEqual(['widgetOffsetX', 'widgetOffsetY', 'widgetScale', 'widgetRotation', 'widgetOpacity']
       .map(key => properties[key]?.type), ['slider', 'slider', 'slider', 'slider', 'slider']);
   }

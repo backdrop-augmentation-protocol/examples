@@ -27,6 +27,13 @@
     "showYear": { "labels": { "en": "Show year", "zh-CN": "显示年份" } },
     "calendarTitle": { "labels": { "en": "Calendar label", "zh-CN": "日历标题" } },
     "fontScale": { "labels": { "en": "Widget size", "zh-CN": "挂件大小" } },
+    "widgetTransformPreset": {
+      "labels": { "en": "Widget transform", "zh-CN": "挂件变换" },
+      "options": [
+        { "value": "default", "labels": { "en": "Default", "zh-CN": "默认" } },
+        { "value": "custom", "labels": { "en": "Custom", "zh-CN": "自定义" } }
+      ]
+    },
     "widgetOffsetX": { "labels": { "en": "Horizontal position", "zh-CN": "水平位置" } },
     "widgetOffsetY": { "labels": { "en": "Vertical position", "zh-CN": "垂直位置" } },
     "widgetScale": { "labels": { "en": "Transform scale", "zh-CN": "变换缩放" } },
