@@ -13,7 +13,7 @@ for (const directory of ['host-wallpaper', 'time-widget', 'calendar-widget']) {
 const dist = resolve(root, 'dist');
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
-for (const directory of ['companion', 'host-wallpaper', 'time-widget', 'calendar-widget', 'assets']) {
+for (const directory of ['companion', 'host-wallpaper', 'time-widget', 'calendar-widget', 'assets', 'shared']) {
   await cp(resolve(root, directory), resolve(dist, directory), { recursive: true });
 }
 await mkdir(resolve(dist, 'sdk', 'host-sdk'), { recursive: true });
@@ -42,8 +42,9 @@ for (const file of ['index.html', 'embedded.html', 'main.js', 'manifest.json', '
   await copyFile(resolve(root, 'time-widget', file), resolve(widgetPackage, file));
 }
 await cp(resolve(componentSdk, 'src'), resolve(widgetPackage, 'sdk', 'component-sdk'), { recursive: true });
+await copyFile(resolve(root, 'shared', 'widget-transform.js'), resolve(widgetPackage, 'shared', 'widget-transform.js'));
 await copyFile(resolve(root, 'assets', 'time-widget', 'river-sunset.jpg'), resolve(widgetPackage, 'assets', 'time-widget', 'river-sunset.jpg'));
-await replaceIn(resolve(widgetPackage, 'main.js'), [["'../sdk/", "'./sdk/"]]);
+await replaceIn(resolve(widgetPackage, 'main.js'), [["'../sdk/", "'./sdk/"], ["'../shared/", "'./shared/"]]);
 await replaceIn(resolve(widgetPackage, 'index.html'), [["../assets/", "./assets/"]]);
 await writeFile(resolve(widgetPackage, 'embedded.html'), await buildInlineEmbedded(
   await readFile(resolve(root, 'time-widget', 'embedded.html'), 'utf8'),
@@ -58,8 +59,9 @@ for (const file of ['index.html', 'embedded.html', 'main.js', 'manifest.json', '
   await copyFile(resolve(root, 'calendar-widget', file), resolve(calendarPackage, file));
 }
 await cp(resolve(componentSdk, 'src'), resolve(calendarPackage, 'sdk', 'component-sdk'), { recursive: true });
+await copyFile(resolve(root, 'shared', 'widget-transform.js'), resolve(calendarPackage, 'shared', 'widget-transform.js'));
 await copyCalendarLandscape(resolve(calendarPackage, 'assets', 'calendar-widget', 'lake-mountain.jpg'));
-await replaceIn(resolve(calendarPackage, 'main.js'), [["'../sdk/", "'./sdk/"]]);
+await replaceIn(resolve(calendarPackage, 'main.js'), [["'../sdk/", "'./sdk/"], ["'../shared/", "'./shared/"]]);
 await replaceIn(resolve(calendarPackage, 'index.html'), [["../assets/", "./assets/"]]);
 await writeFile(resolve(calendarPackage, 'embedded.html'), await buildInlineEmbedded(
   await readFile(resolve(root, 'calendar-widget', 'embedded.html'), 'utf8'),

@@ -1,24 +1,18 @@
 import { ComponentRuntime } from '../sdk/component-sdk/runtime.js';
 import { PostMessageClient } from '../sdk/component-sdk/post-message-client.js';
+import { applyWidgetTransform as applyTransform } from '../shared/widget-transform.js';
 
 const embedded = window.parent !== window;
 if (embedded) document.documentElement.classList.add('embedded');
 const manifest = { protocol: { name: 'bap', version: '0.1.0', profile: 'core' }, id: 'org.bap.examples.time-widget', name: 'BAP Time Widget Demo', version: '0.1.0', implementationVersion: '0.1.0', role: 'component', capabilities: ['lifecycle', 'config'], permissions: [], modes: ['standalone', 'embedded'], entrypoints: { default: './index.html', standalone: './index.html', embedded: './embedded.html' }, configScopes: ['global', 'wallpaper'], description: 'Open-license demo time widget' };
 const targetOrigin = '*';
 const client = embedded ? new PostMessageClient({ target: window.parent, targetOrigin, receiveWindow: window }) : null;
-const runtime = new ComponentRuntime({ manifest, mode: embedded ? 'embedded' : 'standalone', client, config: { locale: 'en-US', use12HourClock: false, showSeconds: false, showDate: true, fontScale: 1 },
+const runtime = new ComponentRuntime({ manifest, mode: embedded ? 'embedded' : 'standalone', client, config: { locale: 'en-US', use12HourClock: false, showSeconds: false, showDate: true, fontScale: 1, widgetTransformPreset: 'default' },
   extensions: [{ id: 'org.bap.component-config', versions: ['0.1.0'] }] });
 const time = document.querySelector('#time'); const date = document.querySelector('#date');
 const card = document.querySelector('.card');
 function applyWidgetTransform() {
-  const finite = (key, fallback) => Number.isFinite(Number(runtime.getConfig(key))) ? Number(runtime.getConfig(key)) : fallback;
-  const x = Math.max(-50, Math.min(50, finite('widgetOffsetX', 0)));
-  const y = Math.max(-50, Math.min(50, finite('widgetOffsetY', 0)));
-  const scale = Math.max(0.25, Math.min(2, finite('widgetScale', 1)));
-  const rotation = Math.max(-180, Math.min(180, finite('widgetRotation', 0)));
-  const opacity = Math.max(0.1, Math.min(1, finite('widgetOpacity', 1)));
-  card.style.transform = `translate(${x}vw, ${y}vh) scale(${scale}) rotate(${rotation}deg)`;
-  card.style.opacity = String(opacity);
+  applyTransform(card, { widgetTransformPreset: runtime.getConfig('widgetTransformPreset'), widgetOffsetX: runtime.getConfig('widgetOffsetX'), widgetOffsetY: runtime.getConfig('widgetOffsetY'), widgetScale: runtime.getConfig('widgetScale'), widgetRotation: runtime.getConfig('widgetRotation'), widgetOpacity: runtime.getConfig('widgetOpacity') });
 }
 function applySchemeColor() {
   const color = runtime.getConfig('appearancePreset') === 'standard' ? '0.55 0.82 1' : runtime.getConfig('schemecolor');
@@ -32,7 +26,7 @@ runtime.onConfigChange(render); render(); setInterval(() => { if (runtime.state 
 window.wallpaperPropertyListener = {
   applyUserProperties(properties) {
     const patch = {};
-    for (const key of ['timePreset', 'timeFormat', 'showSeconds', 'showDate', 'dateStyle', 'label', 'appearancePreset', 'fontScale', 'schemecolor', 'widgetOffsetX', 'widgetOffsetY', 'widgetScale', 'widgetRotation', 'widgetOpacity'])
+    for (const key of ['timePreset', 'timeFormat', 'showSeconds', 'showDate', 'dateStyle', 'label', 'appearancePreset', 'fontScale', 'schemecolor', 'widgetTransformPreset', 'widgetOffsetX', 'widgetOffsetY', 'widgetScale', 'widgetRotation', 'widgetOpacity'])
       if (properties[key]?.value !== undefined) patch[key] = properties[key].value;
     void runtime.setConfig(patch);
   },

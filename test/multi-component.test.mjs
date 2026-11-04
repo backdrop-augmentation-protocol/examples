@@ -2,6 +2,20 @@ import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
 import { resolveLayouts } from '@backdrop-augmentation-protocol/host-sdk';
+import { applyWidgetTransform, resolveWidgetTransform } from '../shared/widget-transform.js';
+
+test('default transform preset restores baseline while retaining custom values', () => {
+  const config = { widgetTransformPreset: 'default', widgetOffsetX: 21, widgetOffsetY: -17, widgetScale: 1.8, widgetRotation: 42, widgetOpacity: 0.4 };
+  assert.equal(resolveWidgetTransform(config), null);
+  const element = { style: { transform: 'stale transform', opacity: '0.4' } };
+  applyWidgetTransform(element, config);
+  assert.deepEqual(element.style, { transform: '', opacity: '' });
+});
+
+test('custom transform preset applies bounded custom values', () => {
+  assert.deepEqual(resolveWidgetTransform({ widgetTransformPreset: 'custom', widgetOffsetX: 80, widgetOffsetY: -12, widgetScale: 1.5, widgetRotation: 30, widgetOpacity: 0.7 }),
+    { x: 50, y: -12, scale: 1.5, rotation: 30, opacity: 0.7 });
+});
 
 test('Host demo auto-layout mounts preset components without bundling them', async () => {
   const html = await readFile(new URL('../dist/workshop-host-wallpaper/index.html', import.meta.url), 'utf8');
