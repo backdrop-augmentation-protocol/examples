@@ -55,7 +55,6 @@ const host = new HostRuntime({
   viewport: { width: window.innerWidth, height: window.innerHeight },
 });
 const mountedComponents = new Map();
-let activeLayoutMode = null;
 function mountComponent(definition, srcdoc) {
   const { instanceId, componentId, sourceKey } = definition;
   const component = host.mount({
@@ -116,18 +115,16 @@ async function connectToCompanion() {
       const selected = composition.instances ?? [];
       if (reconnectScheduled) return;
       const desired = new Set(selected.filter(item => item.status === 'available').map(item => item.instanceId));
-      const layoutModeChanged = activeLayoutMode !== null && activeLayoutMode !== composition.layoutMode;
-      if (layoutModeChanged) {
-        for (const instanceId of mountedComponents.keys()) host.unmount(instanceId);
-        mountedComponents.clear();
-      }
-      host.setLayoutMode(composition.layoutMode, composition.grid ?? undefined);
-      activeLayoutMode = composition.layoutMode;
       for (const instanceId of mountedComponents.keys()) {
         const record = mountedComponents.get(instanceId);
         const next = selected.find(item => item.instanceId === instanceId);
-        if (!desired.has(instanceId) || next?.sourceKey !== record.sourceKey) host.unmount(instanceId);
+        if (!desired.has(instanceId) || next?.sourceKey !== record.sourceKey) {
+          host.unmount(instanceId);
+          mountedComponents.delete(instanceId);
+        }
       }
+      host.applyLayoutSnapshot(composition.layoutMode, composition.grid ?? undefined,
+        new Map([...mountedComponents.keys()].map(instanceId => [instanceId, selected.find(item => item.instanceId === instanceId)?.layout])));
       for (const item of selected) {
         const instanceId = item.instanceId;
         if (item.status !== 'available') { setComponentState(instanceId, item.status); continue; }
@@ -147,10 +144,7 @@ async function connectToCompanion() {
         const record = mountedComponents.get(instanceId);
         const nextConfig = JSON.stringify(item.config ?? {});
         const nextLayout = JSON.stringify(item.layout);
-        if (record && record.layout !== nextLayout && item.layout) {
-          host.setLayout(instanceId, item.layout);
-          record.layout = nextLayout;
-        }
+        if (record && record.layout !== nextLayout) record.layout = nextLayout;
         if (record && record.config !== nextConfig && host.updateConfig(instanceId, item.config ?? {}, item.configRevision ?? 0)) {
           record.config = nextConfig;
           record.configRevision = item.configRevision ?? record.configRevision;
