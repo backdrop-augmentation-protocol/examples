@@ -25,12 +25,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/companion
-          ref: 1ac8c391e67dfd9d4cf9ddf06a0fe0009b96255b
+          ref: 5bf670a9c514668ab98ed4dc0c66ef49e6e6bf7f
           path: companion
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/host-sdk
-          ref: 62b22251629be8e0c32aa1a6caff3996ef510008
+          ref: 2a2f66f48597ec4b3ae671551d361e679aca5499
           path: host-sdk
       - uses: actions/checkout@v6
         with:
