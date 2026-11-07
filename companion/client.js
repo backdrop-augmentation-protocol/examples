@@ -77,7 +77,7 @@ export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clie
     }
     return response;
   };
-  async function readJson(path, label) { const response = await authFetch(path); if (!response.ok) throw new Error(`${label}: HTTP ${response.status}`); return response.json(); }
+  async function readJson(path, label) { const response = await authFetch(path, { cache: 'no-store' }); if (!response.ok) throw new Error(`${label}: HTTP ${response.status}`); return response.json(); }
   return {
     session,
     hello,

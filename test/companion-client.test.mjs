@@ -55,6 +55,7 @@ test('reads embedded resources without using the HTTP cache', async t => {
   assert.match(effectiveRequest.url, /projectUrl=file%3A%2F%2F%2FD%3A%2Fwallpapers%2Flocal-host%2Findex\.html$/);
   const compositionRequest = requests.find(item => item.url.includes('/composition'));
   assert.match(compositionRequest.url, /\/v1\/hosts\/org\.example\.host\/composition\?projectUrl=/);
+  assert.equal(compositionRequest.options.cache, 'no-store');
   companion.close();
 });
 
