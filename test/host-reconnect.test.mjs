@@ -48,7 +48,7 @@ test('the actual Host demo reconnects to Companion after its socket closes', asy
     if (url.endsWith('/v1/session')) return { ok: true, json: async () => ({ sessionId: `session-${++sessions}`, accessToken: `token-${sessions}` }) };
     if (url.includes('/v1/hosts/')) return expireSecondSession && options.headers.authorization === 'Bearer token-2'
       ? { ok: false, status: 401 }
-      : { ok: true, json: async () => ({ presetId: 'test', layoutMode: 'grid', grid: { columns: 2, gapX: 0.04, gapY: 0.04, paddingX: 0.04, paddingY: 0.04 }, instances: [] }) };
+      : { ok: true, json: async () => ({ presetId: 'test', revision: 1, updatedAt: '2026-11-07T00:00:00Z', layoutMode: 'grid', grid: { columns: 2, gapX: 0.04, gapY: 0.04, paddingX: 0.04, paddingY: 0.04 }, instances: [] }) };
     throw new Error(`Unexpected Host request: ${url}`);
   };
   globalThis.WebSocket = class {

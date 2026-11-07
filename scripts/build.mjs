@@ -78,7 +78,7 @@ for (const file of ['project.json', 'preview.png']) {
 
 const hostPackage = resolve(dist, 'workshop-host-wallpaper');
 await mkdir(hostPackage, { recursive: true });
-for (const file of ['index.html', 'main.js', 'manifest.json', 'project.json', 'preview.gif']) {
+for (const file of ['index.html', 'main.js', 'composition.js', 'manifest.json', 'project.json', 'preview.gif']) {
   await copyFile(resolve(root, 'host-wallpaper', file), resolve(hostPackage, file));
 }
 await cp(resolve(hostSdk, 'dist'), resolve(hostPackage, 'sdk', 'host-sdk'), { recursive: true });
@@ -95,6 +95,7 @@ await replaceIn(resolve(hostPackage, 'main.js'), [
   ["'../companion/", "'./companion/"],
   ["'../assets/", "'./assets/"],
 ]);
+await replaceIn(resolve(hostPackage, 'composition.js'), [["'../sdk/", "'./sdk/"]]);
 
 // Local-only diagnostic overlay for investigating Host lifecycle/reconnect
 // behavior. Keep the opt-in flag out of the uploadable Workshop package.

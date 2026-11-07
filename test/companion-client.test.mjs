@@ -20,7 +20,7 @@ test('reads embedded resources without using the HTTP cache', async t => {
     requests.push({ url, options });
     if (url.endsWith('/v1/session')) return { ok: true, json: async () => ({ sessionId: 'test-session', accessToken: 'test-token' }) };
     if (url.endsWith('/v1/diagnostics')) return { ok: true };
-  if (url.includes('/v1/hosts/')) return { ok: true, json: async () => url.includes('/composition') ? { presetId: 'demo', layoutMode: 'grid', grid: { columns: 2 }, instances: [] } : [] };
+  if (url.includes('/v1/hosts/')) return { ok: true, json: async () => url.includes('/composition') ? { presetId: 'demo', revision: 1, updatedAt: '2026-11-07T00:00:00Z', layoutMode: 'grid', grid: { columns: 2 }, instances: [] } : [] };
     if (url.includes('/resources/')) return { ok: true, blob: async () => new Blob(['<p>clock</p>']) };
     throw new Error(`Unexpected request: ${url}`);
   };

@@ -1,5 +1,6 @@
 import { HostRuntime, WallpaperEngineHost } from '../sdk/host-sdk/index.js';
 import { COMPANION_POLICY, companionReconnectDelayMs, connectCompanion } from '../companion/client.js';
+import { nextEffectiveConfigRevision, validateCompositionSnapshot } from './composition.js';
 
 const video = document.querySelector('#video');
 const volume = document.querySelector('#volume');
@@ -92,6 +93,8 @@ async function connectToCompanion() {
   let reconnectScheduled = false;
   let refreshTimer;
   let refreshing = false;
+  let appliedPresetId;
+  let appliedPresetRevision = -1;
   function reconnect(reason) {
     if (reconnectScheduled) return;
     reconnectScheduled = true;
@@ -112,7 +115,9 @@ async function connectToCompanion() {
     refreshing = true;
     try {
       const composition = await companion.getComposition(hostId);
-      const selected = composition.instances ?? [];
+      validateCompositionSnapshot(composition, { width: window.innerWidth, height: window.innerHeight });
+      if (composition.presetId === appliedPresetId && composition.revision < appliedPresetRevision) return;
+      const selected = composition.instances;
       if (reconnectScheduled) return;
       const desired = new Set(selected.filter(item => item.status === 'available').map(item => item.instanceId));
       for (const instanceId of mountedComponents.keys()) {
@@ -145,12 +150,15 @@ async function connectToCompanion() {
         const nextConfig = JSON.stringify(item.config ?? {});
         const nextLayout = JSON.stringify(item.layout);
         if (record && record.layout !== nextLayout) record.layout = nextLayout;
-        if (record && record.config !== nextConfig && host.updateConfig(instanceId, item.config ?? {}, item.configRevision ?? 0)) {
+        const configRevision = record ? nextEffectiveConfigRevision(item.configRevision, record.configRevision) : item.configRevision;
+        if (record && record.config !== nextConfig && host.updateConfig(instanceId, item.config, configRevision)) {
           record.config = nextConfig;
-          record.configRevision = item.configRevision ?? record.configRevision;
+          record.configRevision = configRevision;
         }
       }
       for (const id of componentStates.keys()) if (!selected.some(item => item.instanceId === id)) componentStates.delete(id);
+      appliedPresetId = composition.presetId;
+      appliedPresetRevision = composition.revision;
       showStatus();
     } catch (error) { console.warn('BAP preset refresh failed', error); }
     finally { refreshing = false; }
