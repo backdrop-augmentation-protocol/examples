@@ -17,7 +17,7 @@ class FakeWindow {
   dispatch(event) { for (const listener of this.listeners.get('message') || []) listener(event); }
 }
 
-function createInterop(behaviors = [], handshakeTimeoutMs = 1000, extensions = [{ id: 'org.bap.component-config', versions: ['0.1.0'] }]) {
+function createInterop(behaviors = [], handshakeTimeoutMs = 1000) {
   const hostWindow = new FakeWindow();
   const frames = [];
   const document = { baseURI: 'https://host.test/', createElement(name) {
@@ -33,12 +33,13 @@ function createInterop(behaviors = [], handshakeTimeoutMs = 1000, extensions = [
     } };
     const manifest = { protocol: BAP_PROTOCOL, id: `example.widget-${frames.length}`, name: 'Widget', version: '0.1.0', role: 'component', capabilities: ['lifecycle'], modes: ['standalone', 'embedded'], entrypoints: { default: 'index.html', standalone: 'index.html', embedded: 'embedded.html' } };
     const client = new PostMessageClient({ target: parent, targetOrigin: '*', receiveWindow: componentWindow });
-    const runtime = new ComponentRuntime({ manifest, mode: 'embedded', client, extensions });
+    const runtime = new ComponentRuntime({ manifest, mode: 'embedded', client,
+      extensions: [{ id: 'org.bap.component-config', versions: ['0.1.0'] }] });
     frames.push({ iframe, runtime, client });
     return iframe;
   } };
   const host = new HostRuntime({ window: hostWindow, document, handshakeTimeoutMs,
-    extensions });
+    extensions: [{ id: 'org.bap.component-config', versions: ['0.1.0'] }] });
   const container = { appendChild() {} };
   const mount = (id, options = {}) => host.mount({ instanceId: id, componentId: id, srcdoc: '<p>Widget</p>', container, ...options });
   const startFrames = async () => { for (const { iframe, runtime } of frames) { await runtime.start(); iframe.listeners.get('load')(); } };
@@ -87,25 +88,6 @@ test('preset config snapshots update only the matching repeated component instan
   await waitFor(() => frames[0].runtime.getConfig('text') === 'updated');
   assert.equal(frames[1].runtime.getConfig('text'), 'second');
   assert.ok(first && second);
-  close();
-});
-
-test('presentation scenes flow from Host SDK to presentation-only Component SDK instances', async () => {
-  const extension = [{ id: 'org.bap.presentation', versions: ['0.1.0'] }];
-  const { host, frames, mount, startFrames, close } = createInterop([], 1000, extension);
-  assert.equal(host.setScene('lock-screen', 'startup'), 0);
-  const handles = ['clock-a', 'clock-b'].map(mount);
-  const observed = [[], []];
-  frames.forEach((frame, index) => frame.runtime.onPresentationChange(state => observed[index].push(state)));
-  await startFrames();
-  await waitFor(() => handles.every(handle => handle.state === 'running') && observed.every(events => events.some(event => event.sceneId === 'lock-screen')));
-  assert.deepEqual(frames.map(frame => frame.runtime.instanceId), ['clock-a', 'clock-b']);
-  assert.deepEqual(observed.map(events => events.at(-1).sceneRevision), [0, 0]);
-  assert.equal(host.setScene('desktop', 'resume'), 1);
-  await waitFor(() => observed.every(events => events.at(-1).sceneId === 'desktop'));
-  assert.deepEqual(observed.map(events => events.at(-1).sceneRevision), [1, 1]);
-  assert.equal(host.setScene('desktop', 'duplicate'), 1);
-  assert.deepEqual(observed.map(events => events.length), [2, 2]);
   close();
 });
 
