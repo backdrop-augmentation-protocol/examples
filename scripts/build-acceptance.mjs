@@ -41,7 +41,7 @@ await replaceOnce(resolve(host, 'index.html'),
   '#scene-probe-status{position:fixed;left:22px;top:56px;z-index:4;color:#d8f2ff;background:#07111dcc;padding:6px 10px;border:1px solid #47718e;border-radius:6px;font:12px system-ui,sans-serif}\n#companion-status{position:fixed;');
 await replaceOnce(resolve(host, 'index.html'),
   '#controls{position:fixed;right:22px;bottom:18px;z-index:4;opacity:.25;transition:opacity .2s}#controls:hover{opacity:1}',
-  '#controls{position:fixed;left:22px;top:96px;right:auto;bottom:auto;z-index:4;display:flex;align-items:center;gap:8px;padding:8px;border:1px solid #80dce5;border-radius:8px;background:#07111ddd;box-shadow:0 2px 14px #000b;opacity:1;transition:none}#controls:hover{opacity:1}#scene-probe{background:#087f8c;border:2px solid #b9fbff;font-weight:700;padding:10px 14px;box-shadow:0 2px 14px #000b}');
+  '#controls{position:fixed;right:22px;bottom:18px;z-index:4;opacity:1;transition:none}#controls:hover{opacity:1}#scene-probe{background:#087f8c;border:2px solid #b9fbff;font-weight:700;padding:10px 14px;box-shadow:0 2px 14px #000b}');
 
 async function makeComponent(name, source, htmlTemplate) {
   const destination = resolve(output, name);
