@@ -17,7 +17,7 @@ class FakeWindow {
   dispatch(event) { for (const listener of this.listeners.get('message') || []) listener(event); }
 }
 
-function createInterop(behaviors = [], handshakeTimeoutMs = 1000) {
+function createInterop(behaviors = [], handshakeTimeoutMs = 1000, viewport = { width: 1920, height: 1080 }) {
   const hostWindow = new FakeWindow();
   const frames = [];
   const document = { baseURI: 'https://host.test/', createElement(name) {
@@ -38,7 +38,7 @@ function createInterop(behaviors = [], handshakeTimeoutMs = 1000) {
     frames.push({ iframe, runtime, client });
     return iframe;
   } };
-  const host = new HostRuntime({ window: hostWindow, document, handshakeTimeoutMs,
+  const host = new HostRuntime({ window: hostWindow, document, handshakeTimeoutMs, viewport,
     extensions: [{ id: 'org.bap.component-config', versions: ['0.1.0'] }] });
   const container = { appendChild() {} };
   const mount = (id, options = {}) => host.mount({ instanceId: id, componentId: id, srcdoc: '<p>Widget</p>', container, ...options });
@@ -89,6 +89,30 @@ test('preset config snapshots update only the matching repeated component instan
   assert.equal(frames[1].runtime.getConfig('text'), 'second');
   assert.ok(first && second);
   close();
+});
+
+test('the same component stays isolated across Hosts with different viewports, layouts, and preset config', async () => {
+  const hostA = createInterop([], 1000, { width: 1920, height: 1080 });
+  const hostB = createInterop([], 1000, { width: 3440, height: 1440 });
+  const shared = { componentId: 'org.example.clock', srcdoc: '<p>Clock</p>' };
+  const a = hostA.mount('clock-a', { ...shared, config: { label: 'Host A' }, configRevision: 1,
+    layout: { mode: 'manual', anchor: 'top-left', x: 0.1, y: 0.1, width: 0.2, height: 0.2, scale: 1, rotation: 0, opacity: 1, zIndex: 1, locked: false } });
+  const b = hostB.mount('clock-b', { ...shared, config: { label: 'Host B' }, configRevision: 1,
+    layout: { mode: 'manual', anchor: 'top-left', x: 0.6, y: 0.5, width: 0.3, height: 0.25, scale: 1, rotation: 0, opacity: 1, zIndex: 1, locked: false } });
+  await Promise.all([hostA.startFrames(), hostB.startFrames()]);
+  await Promise.all([waitFor(() => a.state === 'running'), waitFor(() => b.state === 'running')]);
+  assert.notEqual(a.sessionId, b.sessionId);
+  assert.equal(hostA.frames[0].runtime.getConfig('label'), 'Host A');
+  assert.equal(hostB.frames[0].runtime.getConfig('label'), 'Host B');
+  assert.equal(a.wrapper.style.left, '192px');
+  assert.equal(a.wrapper.style.width, '384px');
+  assert.equal(b.wrapper.style.left, '2064px');
+  assert.equal(b.wrapper.style.width, '1032px');
+  assert.equal(hostA.host.updateConfig('clock-a', { label: 'Host A updated' }, 2), true);
+  await waitFor(() => hostA.frames[0].runtime.getConfig('label') === 'Host A updated');
+  assert.equal(hostB.frames[0].runtime.getConfig('label'), 'Host B');
+  hostA.close();
+  hostB.close();
 });
 
 for (const [name, transform, expectedCode] of [
