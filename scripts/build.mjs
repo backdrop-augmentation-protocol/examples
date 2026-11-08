@@ -32,6 +32,15 @@ async function copyFile(source, destination) {
   await cp(source, destination);
 }
 
+async function copyOptionalFile(source, destination) {
+  try {
+    await stat(source);
+    await copyFile(source, destination);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+}
+
 async function copyCalendarLandscape(destination) {
   await copyFile(resolve(root, 'assets', 'calendar-widget', 'lake-mountain.jpg'), destination);
 }
@@ -41,6 +50,7 @@ await mkdir(widgetPackage, { recursive: true });
 for (const file of ['index.html', 'embedded.html', 'main.js', 'manifest.json', 'project.json', 'preview.jpg', 'bap-properties.json']) {
   await copyFile(resolve(root, 'time-widget', file), resolve(widgetPackage, file));
 }
+await copyOptionalFile(resolve(root, 'time-widget', 'bap-component.json'), resolve(widgetPackage, 'bap-component.json'));
 await cp(resolve(componentSdk, 'src'), resolve(widgetPackage, 'sdk', 'component-sdk'), { recursive: true });
 await copyFile(resolve(root, 'shared', 'widget-transform.js'), resolve(widgetPackage, 'shared', 'widget-transform.js'));
 await copyFile(resolve(root, 'assets', 'time-widget', 'river-sunset.jpg'), resolve(widgetPackage, 'assets', 'time-widget', 'river-sunset.jpg'));
@@ -58,6 +68,7 @@ await mkdir(calendarPackage, { recursive: true });
 for (const file of ['index.html', 'embedded.html', 'main.js', 'manifest.json', 'bap-properties.json']) {
   await copyFile(resolve(root, 'calendar-widget', file), resolve(calendarPackage, file));
 }
+await copyOptionalFile(resolve(root, 'calendar-widget', 'bap-component.json'), resolve(calendarPackage, 'bap-component.json'));
 await cp(resolve(componentSdk, 'src'), resolve(calendarPackage, 'sdk', 'component-sdk'), { recursive: true });
 await copyFile(resolve(root, 'shared', 'widget-transform.js'), resolve(calendarPackage, 'shared', 'widget-transform.js'));
 await copyCalendarLandscape(resolve(calendarPackage, 'assets', 'calendar-widget', 'lake-mountain.jpg'));
