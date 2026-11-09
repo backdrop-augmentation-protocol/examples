@@ -159,10 +159,16 @@ async function connectToCompanion() {
       }
       const commands = await companion.getRuntimeCommands();
       for (const command of commands) {
-        if (!mountedComponents.has(command.instanceId) || !command.config || !Number.isSafeInteger(command.configRevision)) continue;
+        const hasConfig = !!command.config && Number.isSafeInteger(command.configRevision);
+        const hasLayout = !!command.layout;
+        if (!mountedComponents.has(command.instanceId) || (!hasConfig && !hasLayout)) continue;
         const record = mountedComponents.get(command.instanceId);
         const current = host.getComponentInstances().find(instance => instance.instanceId === command.instanceId);
-        if (current && command.configRevision > current.configRevision && host.updateConfig(command.instanceId, command.config, command.configRevision)) {
+        if (current && command.layout && JSON.stringify(current.layout) !== JSON.stringify(command.layout)) {
+          try { host.setLayout(command.instanceId, command.layout); record.layout = JSON.stringify(command.layout); }
+          catch (error) { console.warn(`BAP runtime layout update failed for ${command.instanceId}`, error); }
+        }
+        if (current && hasConfig && command.configRevision > current.configRevision && host.updateConfig(command.instanceId, command.config, command.configRevision)) {
           record.config = JSON.stringify(command.config);
           record.configRevision = command.configRevision;
         }
