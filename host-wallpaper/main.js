@@ -93,6 +93,7 @@ async function connectToCompanion() {
   let reconnectScheduled = false;
   let refreshTimer;
   let refreshing = false;
+  let reportingInventory = false;
   let appliedPresetId;
   let appliedPresetRevision = -1;
   function reconnect(reason) {
@@ -156,12 +157,31 @@ async function connectToCompanion() {
           record.configRevision = configRevision;
         }
       }
+      const commands = await companion.getRuntimeCommands();
+      for (const command of commands) {
+        if (!mountedComponents.has(command.instanceId) || !command.config || !Number.isSafeInteger(command.configRevision)) continue;
+        const record = mountedComponents.get(command.instanceId);
+        const current = host.getComponentInstances().find(instance => instance.instanceId === command.instanceId);
+        if (current && command.configRevision > current.configRevision && host.updateConfig(command.instanceId, command.config, command.configRevision)) {
+          record.config = JSON.stringify(command.config);
+          record.configRevision = command.configRevision;
+        }
+      }
+      await reportRuntimeInventory();
       for (const id of componentStates.keys()) if (!selected.some(item => item.instanceId === id)) componentStates.delete(id);
       appliedPresetId = composition.presetId;
       appliedPresetRevision = composition.revision;
       showStatus();
     } catch (error) { console.warn('BAP preset refresh failed', error); }
     finally { refreshing = false; }
+  }
+  async function reportRuntimeInventory() {
+    if (reportingInventory || !companion) return;
+    reportingInventory = true;
+    try {
+      await companion.reportRuntimeSnapshot(hostId, 'BAP Host Wallpaper Demo', host.getComponentInstances());
+    } catch (error) { console.warn('BAP runtime inventory report failed', error); }
+    finally { reportingInventory = false; }
   }
   try {
     companion = await connectCompanion(diagnosticsEnabled ? {
@@ -171,6 +191,7 @@ async function connectToCompanion() {
     if (diagnosticsEnabled) activeDiagnosticReporter = (event, details) => companion.reportDiagnostic(event, details);
     companion.socket.addEventListener('close', event => reconnect(`websocket-close:${event.code}:${event.reason || 'no-reason'}`), { once: true });
     if (reconnectScheduled) return;
+    host.on('componentInventoryChanged', () => { void reportRuntimeInventory(); });
     lastConnectedAt = Date.now();
     companionState = 'connected';
     showStatus();

@@ -20,6 +20,8 @@ test('reads embedded resources without using the HTTP cache', async t => {
     requests.push({ url, options });
     if (url.endsWith('/v1/session')) return { ok: true, json: async () => ({ sessionId: 'test-session', accessToken: 'test-token' }) };
     if (url.endsWith('/v1/diagnostics')) return { ok: true };
+    if (url.endsWith('/v1/runtime/snapshot')) return { ok: true };
+    if (url.endsWith('/v1/runtime/commands')) return { ok: true, json: async () => [{ instanceId: 'clock-1', config: { format: '24h' }, configRevision: 3 }] };
   if (url.includes('/v1/hosts/')) return { ok: true, json: async () => url.includes('/composition') ? { presetId: 'demo', revision: 1, updatedAt: '2026-11-07T00:00:00Z', layoutMode: 'grid', grid: { columns: 2 }, instances: [] } : [] };
     if (url.includes('/resources/')) return { ok: true, blob: async () => new Blob(['<p>clock</p>']) };
     throw new Error(`Unexpected request: ${url}`);
@@ -39,6 +41,8 @@ test('reads embedded resources without using the HTTP cache', async t => {
   await companion.listEffectiveComponents('org.example.host');
   const composition = await companion.getComposition('org.example.host');
   assert.equal(composition.layoutMode, 'grid');
+  await companion.reportRuntimeSnapshot('org.example.host', 'Demo host', []);
+  assert.deepEqual(await companion.getRuntimeCommands(), [{ instanceId: 'clock-1', config: { format: '24h' }, configRevision: 3 }]);
   const resource = await companion.fetchCatalogResource('workshop:123', './embedded.html');
   assert.equal(await resource.text(), '<p>clock</p>');
   const fetchRequest = requests.find(item => item.url.includes('/resources/'));
@@ -56,6 +60,10 @@ test('reads embedded resources without using the HTTP cache', async t => {
   const compositionRequest = requests.find(item => item.url.includes('/composition'));
   assert.match(compositionRequest.url, /\/v1\/hosts\/org\.example\.host\/composition\?projectUrl=/);
   assert.equal(compositionRequest.options.cache, 'no-store');
+  const runtimeReport = requests.find(item => item.url.endsWith('/v1/runtime/snapshot'));
+  assert.equal(JSON.parse(runtimeReport.options.body).hostId, 'org.example.host');
+  assert.equal(runtimeReport.options.headers.authorization, 'Bearer test-token');
+  assert.equal(requests.find(item => item.url.endsWith('/v1/runtime/commands')).options.cache, 'no-store');
   companion.close();
 });
 

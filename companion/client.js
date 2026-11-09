@@ -92,6 +92,12 @@ export async function connectCompanion({ baseUrl = 'http://127.0.0.1:4311', clie
       const query = projectUrl ? `?projectUrl=${encodeURIComponent(projectUrl)}` : '';
       return readJson(`/v1/hosts/${encodeURIComponent(hostId)}/composition${query}`, 'Companion composition read failed');
     },
+    async reportRuntimeSnapshot(hostId, hostName, instances) {
+      const response = await authFetch('/v1/runtime/snapshot', { method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ hostId, hostName, instances }) });
+      if (!response.ok) throw new Error(`Companion runtime snapshot failed: HTTP ${response.status}`);
+    },
+    getRuntimeCommands() { return readJson('/v1/runtime/commands', 'Companion runtime command read failed'); },
     getComponentManifest(id) { return readJson(`/v1/components/${encodeURIComponent(id)}/manifest`, 'Companion manifest read failed'); },
     async fetchComponentResource(id, path) { const response = await authFetch(`/v1/components/${encodeURIComponent(id)}/resources/${path.split('/').map(encodeURIComponent).join('/')}`, { cache: 'no-store' }); if (!response.ok) throw new Error(`Companion resource read failed: HTTP ${response.status}`); return response.blob(); },
     async fetchCatalogResource(key, path) { const response = await authFetch(`/v1/catalog/components/${encodeURIComponent(key)}/resources/${path.replace(/^\.\//, '').split('/').map(encodeURIComponent).join('/')}`, { cache: 'no-store' }); if (!response.ok) throw new Error(`Companion catalog resource read failed: HTTP ${response.status}`); return response.blob(); },
