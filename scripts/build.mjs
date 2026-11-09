@@ -89,7 +89,7 @@ for (const file of ['project.json', 'preview.png']) {
 
 const hostPackage = resolve(dist, 'workshop-host-wallpaper');
 await mkdir(hostPackage, { recursive: true });
-for (const file of ['index.html', 'main.js', 'composition.js', 'manifest.json', 'project.json', 'preview.gif']) {
+for (const file of ['index.html', 'main.js', 'composition.js', 'runtime-inventory-reporter.js', 'manifest.json', 'project.json', 'preview.gif']) {
   await copyFile(resolve(root, 'host-wallpaper', file), resolve(hostPackage, file));
 }
 await cp(resolve(hostSdk, 'dist'), resolve(hostPackage, 'sdk', 'host-sdk'), { recursive: true });

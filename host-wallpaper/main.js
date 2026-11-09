@@ -1,6 +1,7 @@
 import { HostRuntime, WallpaperEngineHost } from '../sdk/host-sdk/index.js';
 import { COMPANION_POLICY, companionReconnectDelayMs, connectCompanion } from '../companion/client.js';
 import { nextEffectiveConfigRevision, validateCompositionSnapshot } from './composition.js';
+import { createCoalescedReporter } from './runtime-inventory-reporter.js';
 
 const video = document.querySelector('#video');
 const volume = document.querySelector('#volume');
@@ -95,7 +96,6 @@ async function connectToCompanion() {
   let reconnectScheduled = false;
   let refreshTimer;
   let refreshing = false;
-  let reportingInventory = false;
   let appliedPresetId;
   let appliedPresetRevision = -1;
   function reconnect(reason) {
@@ -184,14 +184,11 @@ async function connectToCompanion() {
     } catch (error) { console.warn('BAP preset refresh failed', error); }
     finally { refreshing = false; }
   }
-  async function reportRuntimeInventory() {
-    if (reportingInventory || !companion) return;
-    reportingInventory = true;
-    try {
-      await companion.reportRuntimeSnapshot(hostId, 'BAP Host Wallpaper Demo', host.getComponentInstances());
-    } catch (error) { console.warn('BAP runtime inventory report failed', error); }
-    finally { reportingInventory = false; }
-  }
+  const reportRuntimeInventory = createCoalescedReporter(
+    () => host.getComponentInstances(),
+    instances => companion.reportRuntimeSnapshot(hostId, 'BAP Host Wallpaper Demo', instances),
+    error => console.warn('BAP runtime inventory report failed', error),
+  );
   try {
     companion = await connectCompanion(diagnosticsEnabled ? {
       diagnosticInstanceId: hostPageInstanceId,
