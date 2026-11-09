@@ -17,6 +17,7 @@ function diagnostic(event, details = {}) {
   console.info('[BAP-DIAG]', JSON.stringify({ event, at: new Date().toISOString(), pageInstanceId: hostPageInstanceId, href: globalThis.location?.href ?? null, ...details }));
 }
 let activeDiagnosticReporter = null;
+let activeRuntimeReporter = null;
 if (diagnosticsEnabled) {
   diagnostic('page-start', { visibility: document.visibilityState, referrer: document.referrer });
   window.addEventListener('pagehide', event => { diagnostic('pagehide', { persisted: event.persisted }); activeDiagnosticReporter?.('pagehide', { persisted: event.persisted }); });
@@ -83,6 +84,7 @@ const adapter = {
   onResume(listener) { this.resume = listener; },
 };
 new WallpaperEngineHost(host, adapter);
+host.on('componentInventoryChanged', () => { void activeRuntimeReporter?.(); });
 window.addEventListener('resize', () => {
   host.setViewport({ width: window.innerWidth, height: window.innerHeight });
 });
@@ -99,6 +101,7 @@ async function connectToCompanion() {
   function reconnect(reason) {
     if (reconnectScheduled) return;
     reconnectScheduled = true;
+    activeRuntimeReporter = null;
     if (lastConnectedAt && Date.now() - lastConnectedAt >= COMPANION_POLICY.reconnectResetAfterMs) reconnectAttempts = 0;
     const delay = companionReconnectDelayMs(++reconnectAttempts);
     diagnostic('reconnect-scheduled', { reason, attempt: reconnectAttempts, delayMs: delay, lastConnectedAt: lastConnectedAt ? new Date(lastConnectedAt).toISOString() : null });
@@ -197,7 +200,7 @@ async function connectToCompanion() {
     if (diagnosticsEnabled) activeDiagnosticReporter = (event, details) => companion.reportDiagnostic(event, details);
     companion.socket.addEventListener('close', event => reconnect(`websocket-close:${event.code}:${event.reason || 'no-reason'}`), { once: true });
     if (reconnectScheduled) return;
-    host.on('componentInventoryChanged', () => { void reportRuntimeInventory(); });
+    activeRuntimeReporter = reportRuntimeInventory;
     lastConnectedAt = Date.now();
     companionState = 'connected';
     showStatus();
