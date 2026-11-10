@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/conformance
-          ref: 56f3f9b29d07bcbee5b1db724553dab1deb0b888
+          ref: 3f7b7f0d9e8dee09ae1806268c395cdcb6e92169
           path: conformance
       - uses: actions/checkout@v6
         with:
