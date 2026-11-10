@@ -44,3 +44,7 @@ export function nextEffectiveConfigRevision(incomingRevision, currentRevision) {
     throw new TypeError('Configuration revisions must be non-negative safe integers');
   return Math.max(incomingRevision, currentRevision + 1);
 }
+
+export function effectiveRuntimeLayout(instanceId, presetLayout, runtimeLayouts) {
+  return runtimeLayouts.has(instanceId) ? runtimeLayouts.get(instanceId) : presetLayout;
+}

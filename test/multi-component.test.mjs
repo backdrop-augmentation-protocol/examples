@@ -25,7 +25,7 @@ test('Host demo auto-layout mounts preset components without bundling them', asy
   assert.match(html, /\.components>\.component\{pointer-events:auto\}/);
   assert.match(script, /getComposition\(hostId\)/);
   assert.match(script, /host\.applyLayoutSnapshot\(composition\.layoutMode, composition\.grid/);
-  assert.match(script, /layout: definition\.layout/);
+  assert.match(script, /layout: effectiveRuntimeLayout\(instanceId, definition\.layout, runtimeLayoutOverrides\)/);
   assert.doesNotMatch(script, /host\.unmount\(instanceId\);\s*mountedComponents\.clear\(\)/);
   assert.match(script, /org\.bap\.composition/);
   assert.match(script, /host\.unmount\(id\)/);

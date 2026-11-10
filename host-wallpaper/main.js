@@ -1,6 +1,6 @@
 import { HostRuntime, WallpaperEngineHost } from '../sdk/host-sdk/index.js';
 import { COMPANION_POLICY, companionReconnectDelayMs, connectCompanion } from '../companion/client.js';
-import { nextEffectiveConfigRevision, validateCompositionSnapshot } from './composition.js';
+import { effectiveRuntimeLayout, nextEffectiveConfigRevision, validateCompositionSnapshot } from './composition.js';
 import { createCoalescedReporter } from './runtime-inventory-reporter.js';
 
 const video = document.querySelector('#video');
@@ -58,6 +58,9 @@ const host = new HostRuntime({
   viewport: { width: window.innerWidth, height: window.innerHeight },
 });
 const mountedComponents = new Map();
+// Runtime layout edits belong to the active desktop session, not the preset.
+// Keep them as an overlay so periodic composition refreshes cannot reset them.
+const runtimeLayoutOverrides = new Map();
 function mountComponent(definition, srcdoc) {
   const { instanceId, componentId, sourceKey } = definition;
   const component = host.mount({
@@ -66,7 +69,7 @@ function mountComponent(definition, srcdoc) {
     sourceKey,
     srcdoc,
     container: componentContainer,
-    layout: definition.layout,
+    layout: effectiveRuntimeLayout(instanceId, definition.layout, runtimeLayoutOverrides),
     config: definition.config ?? {},
     configRevision: definition.configRevision ?? 0,
   });
@@ -130,10 +133,14 @@ async function connectToCompanion() {
         if (!desired.has(instanceId) || next?.sourceKey !== record.sourceKey) {
           host.unmount(instanceId);
           mountedComponents.delete(instanceId);
+          runtimeLayoutOverrides.delete(instanceId);
         }
       }
       host.applyLayoutSnapshot(composition.layoutMode, composition.grid ?? undefined,
-        new Map([...mountedComponents.keys()].map(instanceId => [instanceId, selected.find(item => item.instanceId === instanceId)?.layout])));
+        new Map([...mountedComponents.keys()].map(instanceId => {
+          const item = selected.find(candidate => candidate.instanceId === instanceId);
+          return [instanceId, effectiveRuntimeLayout(instanceId, item?.layout, runtimeLayoutOverrides)];
+        })));
       for (const item of selected) {
         const instanceId = item.instanceId;
         if (item.status !== 'available') { setComponentState(instanceId, item.status); continue; }
@@ -168,7 +175,11 @@ async function connectToCompanion() {
         const record = mountedComponents.get(command.instanceId);
         const current = host.getComponentInstances().find(instance => instance.instanceId === command.instanceId);
         if (current && command.layout && JSON.stringify(current.layout) !== JSON.stringify(command.layout)) {
-          try { host.setLayout(command.instanceId, command.layout); record.layout = JSON.stringify(command.layout); }
+          try {
+            host.setLayout(command.instanceId, command.layout);
+            runtimeLayoutOverrides.set(command.instanceId, command.layout);
+            record.layout = JSON.stringify(command.layout);
+          }
           catch (error) { console.warn(`BAP runtime layout update failed for ${command.instanceId}`, error); }
         }
         if (current && hasConfig && command.configRevision > current.configRevision && host.updateConfig(command.instanceId, command.config, command.configRevision)) {
