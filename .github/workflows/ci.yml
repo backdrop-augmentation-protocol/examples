@@ -15,12 +15,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/spec
-          ref: 1f71aaddb3e759a634e6a4ad84958b11de27ab7b
+          ref: e6ddd0895d7b11d5006e393c7f23fe0c63db6ee1
           path: spec
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/conformance
-          ref: 13f3047fee7903ecc49283900b785b2f4d86daf0
+          ref: 56f3f9b29d07bcbee5b1db724553dab1deb0b888
           path: conformance
       - uses: actions/checkout@v6
         with:
@@ -30,12 +30,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/host-sdk
-          ref: c88c04e8ffe580a1030f490cfa227a79a363a3b3
+          ref: 12607987a8f60d5c03a27096287dd8cc38544c3b
           path: host-sdk
       - uses: actions/checkout@v6
         with:
           repository: backdrop-augmentation-protocol/component-sdk
-          ref: a7aa5a700638a81b7ebb0c0cf8e4d409f361ae1b
+          ref: 3c675e42fe5319341cd73c7abaeb875878ef07fe
           path: component-sdk
       - uses: actions/setup-node@v6
         with:
