@@ -146,6 +146,8 @@ test('local calendar exposes the same collapsible grid in both modes', async () 
   assert.match(embedded, /@media\s*\(max-height:\s*420px\)/);
   assert.match(embedded, /\.month\s*\{\s*font-size:\s*23px/);
   assert.match(embedded, /\.day\s*\{[^}]*font-size:\s*12px/);
+  assert.match(embedded, /\.calendar\s*\{[^}]*width:\s*100%[^}]*height:\s*100%/);
+  assert.match(embedded, /\.grid\s*\{[^}]*flex:\s*1 1 auto[^}]*grid-template-rows:\s*repeat\(7, minmax\(0, 1fr\)\)/);
   const host = await readFile(new URL('../dist/workshop-host-wallpaper/index.html', import.meta.url), 'utf8');
   assert.match(host, /\.component\{[^}]*pointer-events:auto/);
   assert.match(standalone, /\.\/assets\/calendar-widget\/lake-mountain\.jpg/);

@@ -7,7 +7,7 @@
   <style>
     html, body, #root { width: 100%; height: 100%; margin: 0; background: transparent; overflow: hidden; }
     body { color: #f7f4e9; font-family: "Segoe UI", system-ui, sans-serif; }
-    .calendar { box-sizing: border-box; width: min(100%, 340px); max-height: 100%; overflow: hidden; margin-left: auto; padding: 20px; border: 1px solid #ffffff4d; border-radius: 20px; background: #10283cdd; box-shadow: 0 12px 36px #0009; }
+    .calendar { box-sizing: border-box; display: flex; flex-direction: column; width: 100%; height: 100%; max-height: 100%; overflow: hidden; margin-left: auto; padding: 20px; border: 1px solid #ffffff4d; border-radius: 20px; background: #10283cdd; box-shadow: 0 12px 36px #0009; }
     .topline { display: flex; justify-content: space-between; align-items: center; }
     .eyebrow { font-size: 10px; letter-spacing: .23em; color: #9bd9e4; }
     .collapse { cursor: pointer; border: 1px solid #ffffff55; border-radius: 8px; background: #ffffff16; color: #f7f4e9; padding: 5px 9px; font: 12px "Segoe UI", system-ui, sans-serif; }
@@ -15,10 +15,10 @@
     .heading { display: flex; justify-content: space-between; align-items: baseline; margin: 10px 0 16px; }
     .month { font-size: 23px; font-weight: 500; }
     .year { font-size: 14px; color: #bad1dc; }
-    .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+    .grid { display: grid; flex: 1 1 auto; min-height: 0; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(7, minmax(0, 1fr)); gap: 5px; text-align: center; }
     .grid[hidden] { display: none; }
     .weekday { font-size: 10px; color: #a5bdc8; padding-bottom: 5px; }
-    .day { display: grid; place-items: center; height: 28px; font-size: 12px; border-radius: 50%; }
+    .day { display: grid; place-items: center; min-height: 0; font-size: 12px; border-radius: 50%; }
     .outside { opacity: .3; }
     .today { background: #ffe2a3; color: #172532; font-weight: 700; }
     @media (max-height: 420px) {
